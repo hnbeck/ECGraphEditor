@@ -232,7 +232,7 @@ buildEdgeQuery <- function(edgeTypes, nodeLabels="")
 {
   edgeExpr = "match (n)-[r?]->(m) "
   # taking selected node labels into account
-  clauseExpr = buildClauseExpr(nodeLabels)
+  clauseExpr = buildNodeLabelExpr(nodeLabels)
   subExpr = buildRelationExpr(edgeTypes)
   edgeExpr = gsub("?", subExpr, edgeExpr, fixed=TRUE)
   query = paste(edgeExpr, clauseExpr,  "return id(r) as id, id(n) as from, id(m) as to")
