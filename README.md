@@ -9,7 +9,10 @@ This tool uses
 
 - **RNeo4j** from Nicole White [details here] (http://github.com/nicolewhite/RNeo4j)
 - **visNetwork** from Benoit Thieurmel [details here] (http://dataknowledge.github.io/visNetwork/)
-- **Neo4j** of course [details here] (http://neo4j.com/)
+
+This tool needs a running
+
+- **Neo4j** [details here] (http://neo4j.com/)
 
 Thanks for this very useful packages !
 
@@ -18,9 +21,13 @@ Thanks for this very useful packages !
 It is not clear when this changes will be adapted (if ever) by the mainstream visNetork. If not, 
 my changes will be integrated in this repository
 
+My fork of visNetwork is available at  [hnbeck/visNetwork](https://github.com/hnbeck/visNetwork.git)
+
 In general the workflow
 
-- ECGraphEditor asks the database which labels, properties for nodes and which relationships are available
+- run a Neo4j database
+- open the server.R and ui.R file in RStudio and so "Run Application" to start the Shiny application
+- ECGraphEditor connects to the current Neo4J db and asks for labals, properties for nodes and relationship types
 - you select which labels and relationships to load
 - you select which property of the nodes (one per node of selected label) are displayed in graph
   (only one property per node of selected label and time can be handled at the moment)
