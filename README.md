@@ -37,6 +37,14 @@ In general the workflow
 
 More details to come.
 
+## Known issues
+
+As of pre alpha, there are bugs ;) 
+But this is important to note:
+- the Neo4j database shall have at least one node, empty databases cannot be handled
+- all nodes shall have at least one label and one property
+- edge properties will be ignored so far
+
 ## License and copyright
 Plese refer to the "LICENSE" file in this directory. 
 Copyright of used libraries and packages as well as for Neo4j is hold by their owners.
