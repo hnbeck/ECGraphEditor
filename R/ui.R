@@ -14,7 +14,7 @@ require(visNetwork)
 
 shinyUI(fluidPage(
 
-     titlePanel("One Graph Edit and Exploration Tool"),
+     titlePanel("EC Graph Editor"),
 
      sidebarLayout(
        sidebarPanel(
@@ -25,7 +25,7 @@ shinyUI(fluidPage(
          selectizeInput("labelPropertyMap", "Mapping node properties to label",
                         choices = list("", selected = "name"),multiple = TRUE,options = list(create = TRUE)),
          selectizeInput("newType", "Node type (=label in Neo4j) applied for new nodes",
-                        choices = list("", selected = "name"),multiple = FALSE, options = list(create = TRUE)),
+                        choices = list("newLabel", selected = "newLabel"),multiple = FALSE, options = list(create = TRUE)),
          selectizeInput("newRelation", "Relationship applied for new edges",
                         choices = list("", selected = "name"),multiple = FALSE, options = list(create = TRUE)),
          h5("Current label property mapping"),

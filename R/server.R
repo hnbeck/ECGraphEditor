@@ -107,9 +107,25 @@ shinyServer(function(input, output, session) {
     if (!is.null(nodeTypesFilter))
     {
       updateSelectInput(session, "labelPropertyMap", choices = createSelectList(propDesc,nodeTypesFilter), selected = NULL)
+      # update newNodeType
+      updateSelectInput(session, "newType", selected = nodeTypesFilter[1])
     }
   })
 
+  # node type filter
+  observeEvent(input$selectEdgeTypes, {
+    edgeTypesFilter = input$selectEdgeTypes
+    
+    # it may be a single string, but a list is needed in any case
+    if (!is.vector(edgeTypesFilter))
+      edgeTypesFilter <- c(edgeTypesFilter)
+    
+    # set choices
+    updateSelectInput(session, "newRelation", selected = edgeTypesFilter[1])
+  
+  })
+  
+  
   # handle change events of vis.js layer
   # every change will be stored as command in a data frame
   observeEvent(input$network_graphChange,{
@@ -220,7 +236,7 @@ shinyServer(function(input, output, session) {
 
     updateGraphData()
 
-    lcc$counter #for reactiveness, this counter will be incrementet every time a redraw and reload is necessary
+    lcc$counter #for reactiveness, this counter will be incremented every time a redraw and reload is necessary
 
     visNetwork(nodes, edges, legend = TRUE) %>%
       visEdges(arrow="to") %>%

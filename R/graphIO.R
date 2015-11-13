@@ -18,6 +18,7 @@ graph = startGraph("http://localhost:7474/db/data")
 loadGraph <- function (graph, nodeLabelFilter="", edgeTypesFilter="", labelPropertyMap = NULL)
 {
   nodes <- NULL
+  
   # for all required node labels
   for (nl in nodeLabelFilter)
   {
