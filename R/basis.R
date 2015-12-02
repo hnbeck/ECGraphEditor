@@ -31,7 +31,18 @@ appendCommand <- function(aCommandList, aVisCmd)
 {
 
   print(aVisCmd)
-  if ((aVisCmd$cmd =="changeNode") || (aVisCmd$cmd =="addNode"))
+  if (aVisCmd$cmd =="addNode")
+  {
+    aNewFrame <- data.frame(cmd=aVisCmd$cmd,
+                            id=aVisCmd$id,
+                            label=aVisCmd$label,
+                            map = aVisCmd$map,
+                            type=aVisCmd$typ,
+                            from=0,
+                            to=0,
+                            prio=1)
+  }
+  if (aVisCmd$cmd =="editNode")
   {
     aNewFrame <- data.frame(cmd=aVisCmd$cmd,
                             id=aVisCmd$id,

@@ -73,8 +73,9 @@ shinyServer(function(input, output, session) {
             nodes <<- data$nodes
             edges <<-data$edges
           }
-          if (c$cmd == "changeNode")
+          if (c$cmd == "editNode")
           {
+          print ("arrived")
            data <- updateNode(graph, c, nodes, edges, propDesc)
            nodes <<- data$nodes
            edges <<-data$edges
@@ -140,28 +141,28 @@ shinyServer(function(input, output, session) {
   observeEvent(input$network_graphChange,{
     if (!is.null(input$network_graphChange))
     {
-      if (input$network_graphChange$cmd =="changeNode")
+      if (input$network_graphChange$cmd =="addNode")
       {
         selId <- input$network_graphChange$id
         selLabel <- input$network_graphChange$label
         aCmd <- input$network_graphChange
-
-        # check if it is a new node
-        if (selId %in% nodes$id)
-        {
-          # print("changed node")
-          aCmd$map <- ""
-          aCmd$type <- ""
-          nodes$label[nodes$id==selId] <<- selLabel
-        }
-        else
-        {
-          aCmd$type <- input$newType
-          aCmd$map <- propertyOfType(input$labelPropertyMap, input$newType)
-          newNode <- data.frame(id = selId, label = selLabel, group = aCmd$type)
-          nodes <<- rbind(nodes,newNode)
-          aCmd$cmd <- "addNode"
-        }
+        aCmd$type <- input$newType
+        aCmd$map <- propertyOfType(input$labelPropertyMap, input$newType)
+        newNode <- data.frame(id = selId, label = selLabel, group = aCmd$type)
+        nodes <<- rbind(nodes,newNode)
+        aCmd$cmd <- "addNode"
+        commandList <<-  appendCommand (commandList, aCmd)
+      }
+      
+      if (input$network_graphChange$cmd =="editNode")
+      {
+        selId <- input$network_graphChange$id
+        selLabel <- input$network_graphChange$label
+        aCmd <- input$network_graphChange
+        # print("changed node")
+        aCmd$map <- ""
+        aCmd$type <- ""
+        nodes$label[nodes$id==selId] <<- selLabel
         commandList <<-  appendCommand (commandList, aCmd)
       }
 
@@ -247,12 +248,14 @@ shinyServer(function(input, output, session) {
 
     lcc$counter #for reactiveness, this counter will be incremented every time a redraw and reload is necessary
 
-    visNetwork(nodes, edges, legend = TRUE) %>%
+    visNetwork(nodes, edges) %>%
       visEdges(arrow="to") %>%
       visPhysics(stabilization = FALSE) %>%
       visInteraction(navigationButtons = TRUE) %>%
       visOptions(manipulation = TRUE,
-                 highlightNearest = TRUE, nodesIdSelection = TRUE) %>% visLayout(improvedLayout = input$improvedLayout)
+                 highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+      visLayout(improvedLayout = input$improvedLayout) %>%
+      visLegend(position="left")
 
   })
   output$labelMapping <- renderText({
