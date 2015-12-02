@@ -11,14 +11,15 @@
 
 # note: at this level, we talk about node labels and node properties
 # this are terms on neo4j level
-
+require(igraph)
 # connection to neo4j database
 graph = startGraph("http://localhost:7474/db/data")
 
-loadGraph <- function (graph, nodeLabelFilter="", edgeTypesFilter="", labelPropertyMap = NULL)
+loadGraph <- function (graph, nodeLabelFilter="", edgeTypesFilter="", labelPropertyMap = NULL, filterID = NULL)
 {
   nodes <- NULL
-  
+  #print(nodeLabelFilter)
+  #print(class(nodeLabelFilter) )
   # for all required node labels
   for (nl in nodeLabelFilter)
   {
@@ -28,7 +29,7 @@ loadGraph <- function (graph, nodeLabelFilter="", edgeTypesFilter="", labelPrope
       aMapEntry = unlist(strsplit(m, "--"))
       if (nl == aMapEntry[1])
       {
-        queryDataNodes <- buildNodeQuery(c(nl), aMapEntry[2])
+        queryDataNodes <- buildNodeQuery(c(nl), aMapEntry[2], filterID)
         nodesSet <- cypher(graph, queryDataNodes$nQuery)
         if (is.null(nodes))
         {
@@ -53,6 +54,9 @@ loadGraph <- function (graph, nodeLabelFilter="", edgeTypesFilter="", labelPrope
   # nodes <- nodes[nodes$id %in% nodeKeys$id,]
   #  print(nodes)
   # print(edges)
+  # remove edges without nodes
+  edges <- edges[edges$from %in% nodes$id,]
+  edges <- edges[edges$to %in% nodes$id,]
 
   return (list( n = nodes, e = edges, numNodes = nrow(nodes), numEdges = nrow(edges)))
 }
@@ -213,17 +217,24 @@ deleteNode <- function(graph, aCommand, nodes, edges)
 
 
 # create cyhper query for reading nodes
-buildNodeQuery <- function(nodeLabels="", aPropertyName)
+buildNodeQuery <- function(nodeLabel="", aPropertyName, focusNode = NULL)
 {
   nodeExpr = "match (n)"
-  clauseExpr = buildNodeLabelExpr(nodeLabels)
+  clauseExpr = buildNodeLabelExpr(nodeLabel)
+  
+  if (!is.null(focusNode) && nodeLabel == focusNode[2])
+  {
+    clauseExpr <- paste("where id(n)=", focusNode[1], " ")
+  }
+  
   query = paste(nodeExpr, clauseExpr ," return id(n) as id, n.? as label, labels(n) as group")
   # query = paste(nodeExpr, clauseExpr ," return id(n) as id, n.? as label")
    if (!is.null(aPropertyName))
     query <- gsub("?", aPropertyName, query, fixed = TRUE)
   else
     query <- gsub("?", "id", query, fixed = TRUE)
-  # print (paste("nodequery", query))
+  
+  print (paste("nodequery", query))
 
   return (list("nQuery"= query, "clauseExpr" = clauseExpr))
 }
@@ -236,9 +247,16 @@ buildEdgeQuery <- function(edgeTypes, nodeLabels="")
   clauseExpr = buildNodeLabelExpr(nodeLabels)
   subExpr = buildRelationExpr(edgeTypes)
   edgeExpr = gsub("?", subExpr, edgeExpr, fixed=TRUE)
-  query = paste(edgeExpr, clauseExpr,  "return id(r) as id, id(n) as from, id(m) as to")
-
+  query = paste(edgeExpr, clauseExpr,  "return id(r) as id, id(n) as from, id(m) as to, type(r) as label")
+ 
   print (paste("edge", query))
 
   return (list("eQuery"= query, "edgeExpr" = subExpr))
+}
+
+createIGraph <- function(nodes, edges)
+{
+   e  <- edges[,!colnames(edges) == "id"]
+  aGraph <- graph_from_data_frame(e, TRUE, nodes)
+  return (aGraph)
 }

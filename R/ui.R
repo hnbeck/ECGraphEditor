@@ -27,7 +27,7 @@ shinyUI(fluidPage(
          selectizeInput("newType", "Node type (=label in Neo4j) applied for new nodes",
                         choices = list("newLabel", selected = "newLabel"),multiple = FALSE, options = list(create = TRUE)),
          selectizeInput("newRelation", "Relationship applied for new edges",
-                        choices = list("", selected = "name"),multiple = FALSE, options = list(create = TRUE)),
+                        choices = list("newRelation", selected = "newRelation"),multiple = FALSE, options = list(create = TRUE)),
          h5("Current label property mapping"),
          verbatimTextOutput("labelMapping"),
          verbatimTextOutput("modSteps"),
@@ -36,7 +36,7 @@ shinyUI(fluidPage(
          actionButton("updateButton", "Save graph"), width="3"
        ),
        mainPanel(
-         visNetworkOutput("network", width = "100%", height="650px")
+         visNetworkOutput("network", width = "100%", height="100%")
        )
      )
 ) )

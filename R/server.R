@@ -10,7 +10,7 @@
 ###########################################################################################
 require(shiny)
 require(visNetwork)
-
+require (stringr)
 source("basis.R")
 source("graphIO.R")
 
@@ -36,7 +36,16 @@ shinyServer(function(input, output, session) {
     nodeTypesFilter <- input$selectNodeTypes
     edgeTypesFilter <- input$selectEdgeTypes
     mapList <-  input$labelPropertyMap
-    data <- loadGraph(graph, nodeTypesFilter, edgeTypesFilter, mapList)
+    # check if id  is selected
+    #if (!is.null(input$network_selected))
+    #  print (paste("setze ID filter", input$network_selected))
+    focusNode <- NULL
+    if (!is.null(input$network_selected) && input$network_selected != "")
+    {
+      focusNode <- list(input$network_selected, nodes$group[nodes$id == input$network_selected])
+    }
+      
+    data <- loadGraph(graph, nodeTypesFilter, edgeTypesFilter, mapList, focusNode)
     nodes <<- data$n
     edges <<- data$e
     lcc$counter <<-lcc$counter +1
@@ -170,7 +179,7 @@ shinyServer(function(input, output, session) {
         # newID <- fetchNewId(deletedEdges, edges)
         # aCmd$id <- newID
         # print(paste("edge id is", selId))
-        newEdge <- data.frame(id = selId, from= selFrom, to=selTo)
+        newEdge <- data.frame(id = selId, from= selFrom, to=selTo, label="")
         edges <<- rbind(edges,newEdge)
         # if redraw/reload necessary uncomment this
         #lcc$counter <- lcc$counter+1
@@ -250,6 +259,6 @@ shinyServer(function(input, output, session) {
     input$labelPropertyMap})
 
   output$modSteps <- renderText({
-    lcc$counter})
+    input$network_selected})
 
 })
