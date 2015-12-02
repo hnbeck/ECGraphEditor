@@ -5,10 +5,10 @@ A small tool to connect to a Neo4j database, edit the network and write it back.
 It is intended for non-commercial and non-productive use only.
 
 ## Libraries
-This tool uses 
+This tool uses and requires
 
 - **RNeo4j** from Nicole White [details here] (http://github.com/nicolewhite/RNeo4j)
-- **visNetwork** from Benoit Thieurmel [details here] (http://dataknowledge.github.io/visNetwork/)
+- **visNetwork** 0.2.0 (not released yet) from Benoit Thieurmel [details here] (http://dataknowledge.github.io/visNetwork/)
 
 This tool needs a running
 
