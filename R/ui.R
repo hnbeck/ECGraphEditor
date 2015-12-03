@@ -33,7 +33,8 @@ shinyUI(fluidPage(
          verbatimTextOutput("modSteps"),
          checkboxInput("improvedLayout", "Use improved layout", value=FALSE),
          actionButton("loadButton", "Load graph"),
-         actionButton("updateButton", "Save graph"), width="3"
+         actionButton("updateButton", "Save graph"),
+         sliderInput("nodeSize", "Node size:", min=5, max = 30, value = 20, step = 1)
        ),
        mainPanel(
          visNetworkOutput("network", width = "100%", height="100%")

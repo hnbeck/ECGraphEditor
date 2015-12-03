@@ -255,7 +255,8 @@ shinyServer(function(input, output, session) {
       visOptions(manipulation = TRUE,
                  highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
       visLayout(improvedLayout = input$improvedLayout) %>%
-      visLegend(position="left")
+      visLegend(position="left") %>%
+      visNodes (size=input$nodeSize)
 
   })
   output$labelMapping <- renderText({
