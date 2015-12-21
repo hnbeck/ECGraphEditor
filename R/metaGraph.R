@@ -30,7 +30,7 @@ loadMetaGraph <- function(graph)
     {
       aQuery <-gsub("?", l, propQuery, fixed = TRUE)
       result <- cypher(graph, aQuery)
-      for (e in unlist(result$keys) )
+      for (e in unique(unlist(result$keys)) )
       {
         newRow <- data.frame(label = l, key = e)
         propDesc <- rbind(propDesc, newRow)

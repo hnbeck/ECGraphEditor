@@ -27,7 +27,7 @@ shinyUI(fluidPage(
          actionButton("loadButton", "Load graph"),
          actionButton("updateButton", "Save graph"),
          actionButton("metaLoadButton", "Load meta graph"),
-         sliderInput("nodeSize", "Node size:", min=5, max = 30, value = 15, step = 1), width = 3
+         sliderInput("nodeSize", "Node scale factor:", min=2, max = 100, value = 10, step = 1), width = 3
        ),
        mainPanel(
          tags$style(type='text/css','#warnings {color: red; font-size: 14pt;}'),

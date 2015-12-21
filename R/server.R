@@ -123,6 +123,7 @@ shinyServer(function(input, output, session) {
       print("Graph meta data loaded")
       updateSelectizeInput(session, "selectEdgeTypes", choices = edgeDesc, selected = selectedE)
       updateSelectizeInput(session, "newRelation", choices = edgeDesc, selected = selectedNewRelation)
+      
       lcc$metaInvalidate <- 0
   })
   
@@ -294,7 +295,9 @@ shinyServer(function(input, output, session) {
 
     lcc$invalidate #for reactiveness, this invalidate will be incremented every time a redraw is necessary
     
-    print("Render graph")
+    # apply scale facor from the slider to the value field
+    # the value field will not be written back to data base 
+    nodes$value <- lapply(nodes$orgValue, function(x) {if (is.numeric(x) && !is.na(x)) x*input$nodeSize else as.numeric(input$nodeSize)})
    
     visNetwork(nodes, edges) %>%
       visEdges(arrow="to") %>%
@@ -303,8 +306,7 @@ shinyServer(function(input, output, session) {
       visOptions(manipulation = TRUE,
                  highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
       visLayout(improvedLayout = input$improvedLayout, randomSeed = 20) %>%
-      visLegend(position="left") %>%
-      visNodes (size=input$nodeSize)
+      visLegend(position="left") 
   })
   
   output$metaNet <- renderVisNetwork({
@@ -326,8 +328,6 @@ shinyServer(function(input, output, session) {
     
   })
   
-  output$labelMapping <- renderText({
-    input$labelPropertyMap})
   
   output$warnings <- renderText({
     lcc$msg})

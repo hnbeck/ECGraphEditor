@@ -20,7 +20,7 @@ loadGraph <- function (graph, mNodes, mEdges,edgeTypesFilter, filterID = NULL)
 {
   nodes <- NULL
   propertyList <- list()
-  print("load")
+  print("Load graph")
  
   # for all required node labels
   for (nl in mNodes$label[mNodes$group == "nodeType"])
@@ -37,11 +37,17 @@ loadGraph <- function (graph, mNodes, mEdges,edgeTypesFilter, filterID = NULL)
           nodes <- merge(x=nodes, y =nodesSet, all=TRUE)
         else
           nodes <- nodesSet
-        
-        print("merge done")
       }
   }
 
+  
+  # if no value column generate one with default 1, important for node size scaling
+  if (! "value" %in% names(nodes))
+    nodes$value <- 1.0
+  
+  # copy the column value
+  nodes$orgValue = as.numeric(nodes$value)
+  
   queryDataEdges <-buildEdgeQuery(edgeTypesFilter, mNodes$label)
   edges <- cypher(graph, queryDataEdges$eQuery)
 
@@ -107,13 +113,12 @@ updateNode <- function(graph, aCommand, nodes, edges, mNodes, mEdges)
 
   result <- cypher(graph, aQuery)
   targetLabel = result$labels[1] # assumption: only one label per node
-  print(targetLabel)
   # only vizLabel can be changed by user in GUI
   aProperty <- findMappedProperty(mNodes, mEdges, targetLabel, "vizLabel")
   if (!aProperty=="NA")
   {
     query = paste0("match (n) where id(n)=", aNodeID, " set n.",aProperty, "='", aNodeContent, "'")
-    print (paste ("update query", query))
+    # print (paste ("update query", query))
     
     # perform update
     result <- cypher(graph, query)
@@ -138,7 +143,7 @@ addEdge <- function(graph, aCommand, nodes, edges)
   if (length(result) == 0)
   {
     aQuery = paste0("match (n), (m) where id(n)=", aFromID, " and id(m) = ", aToID, " CREATE (n)-[r:", aType, "]->(m) return id(r) as id")
-    print(aQuery)
+    # print(aQuery)
     result <- cypher(graph, aQuery)
     # print(result)
 
@@ -157,7 +162,7 @@ deleteEdge <- function(graph, aCommand, nodes, edges)
 
   # for neo4j no problem if egde doesn't exist
   aQuery = paste0("match (n)-[r]-(m) where id(r)=", aID, " delete r")
-  print(aQuery)
+  # print(aQuery)
   result <- cypher(graph, aQuery)
   # print(result)
 
@@ -172,7 +177,7 @@ deleteNode <- function(graph, aCommand, nodes, edges)
 
   # for neo4j no problem if egde doesn't exist
   aQuery = paste0("match (n) where id(n)=", aID, " delete n")
-  print(aQuery)
+  # print(aQuery)
   try({result <- cypher(graph, aQuery)})
   # print(result)
 
