@@ -4,96 +4,59 @@
 #
 # IO component for getting graphs from Neo4j via RNeo4j, modify and store back
 #
-# author: Hans N. Beck
-# version: alpha
+# (c) and author: Hans N. Beck
+# version: 0.1
 #
 ###########################################################################################
 
 # note: at this level, we talk about node labels and node properties
 # this are terms on neo4j level
 require(igraph)
+
 # connection to neo4j database
 graph = startGraph("http://localhost:7474/db/data")
 
-loadGraph <- function (graph, nodeLabelFilter="", edgeTypesFilter="", labelPropertyMap = NULL, filterID = NULL)
+loadGraph <- function (graph, mNodes, mEdges,edgeTypesFilter, filterID = NULL)
 {
   nodes <- NULL
-  #print(nodeLabelFilter)
-  #print(class(nodeLabelFilter) )
+  propertyList <- list()
+  print("load")
+ 
   # for all required node labels
-  for (nl in nodeLabelFilter)
+  for (nl in mNodes$label[mNodes$group == "nodeType"])
   {
-    for (m in labelPropertyMap)
-    {
-      # disassemble map entries to node label and property name
-      aMapEntry = unlist(strsplit(m, "--"))
-      if (nl == aMapEntry[1])
+      for (vA in vizAspects)
+        propertyList[vA] <- findMappedProperty(mNodes, mEdges, nl, vA)
+    
+      queryDataNodes <- buildNodeQuery(c(nl), propertyList, filterID)
+      nodesSet <- cypher(graph, queryDataNodes$nQuery)
+      
+      if (!is.null(nodesSet))
       {
-        queryDataNodes <- buildNodeQuery(c(nl), aMapEntry[2], filterID)
-        nodesSet <- cypher(graph, queryDataNodes$nQuery)
-        if (is.null(nodes))
-        {
-          nodes <- nodesSet
-        }
-        else
-        {
+        if (!is.null(nodes))
           nodes <- merge(x=nodes, y =nodesSet, all=TRUE)
-          print("merge done")
-        }
+        else
+          nodes <- nodesSet
+        
+        print("merge done")
       }
-    }
   }
 
-  queryDataEdges <-buildEdgeQuery(edgeTypesFilter, nodeLabelFilter)
+  queryDataEdges <-buildEdgeQuery(edgeTypesFilter, mNodes$label)
   edges <- cypher(graph, queryDataEdges$eQuery)
 
-  # printGraphData(nodes, edges)
+  #print(nodes)
 
   # uncomment this for removing nodes without edges
   # nodeKeys = data.frame(id=unique(c(edges$from, edges$to)))
   # nodes <- nodes[nodes$id %in% nodeKeys$id,]
-  #  print(nodes)
-  # print(edges)
   # remove edges without nodes
   edges <- edges[edges$from %in% nodes$id,]
   edges <- edges[edges$to %in% nodes$id,]
-
+ 
   return (list( n = nodes, e = edges, numNodes = nrow(nodes), numEdges = nrow(edges)))
 }
 
-# load meta data (labels in database, properties of node with selected label)
-loadGraphMeta <- function(graph)
-{
-  nQuery = "match (n) return distinct labels(n) as labels"
-  eQuery = "match (n)-[r]->(m) return distinct type(r) as types"
-  propQuery = "match (n:?) return distinct keys(n) as keys"
-  result <- cypher(graph, nQuery)
-  nodeDesc <- result$labels
-  result <- cypher(graph, eQuery)
-  edgeDesc <-  result$types
-  print (nodeDesc)
-  # for every node label
-  if (length(unlist(nodeDesc)>0))
-  {
-    propDesc <- vector(length = length(nodeDesc))
-    names(propDesc) <- nodeDesc
-    for (l in nodeDesc)
-    {
-      aQuery <-gsub("?", l, propQuery, fixed = TRUE)
-      result <- cypher(graph, aQuery)
-      propDesc[l] <- result$keys[1]
-    }
-  }
-  else
-  {
-    aQuery = "match (n) return distinct keys(n) as keys"
-    result <- cypher(graph, aQuery)
-    propDesc["deafult"] <- result$keys[1]
-    nodeDesc <- list("Default")
-  }
-
-  return (list(nDesc = nodeDesc, eDesc =edgeDesc, pDesc = propDesc))
-}
 
 # add a node to neo4j
 addNode <- function(graph, aCommand, nodes, edges, lcc)
@@ -117,23 +80,23 @@ addNode <- function(graph, aCommand, nodes, edges, lcc)
     print(query)
     result <- cypher(graph, query)
     # print (paste("reuslt ", result))
-    # correct the id
+    
+    # correct the id because neo4j has its own ids
     nodes$id[nodes$id==aNodeID] <- result$id
-    #correct edges ids
+    # correct edges ids
     edges$from[edges$from==aNodeID] <- result$id
     edges$to[edges$to==aNodeID] <- result$id
     # perform id correction in all edge related commands
     # because this commands include the ids of vis.js at this time
     commandList$from[commandList$from == aNodeID] <<- result$id
     commandList$to[commandList$to== aNodeID] <<- result$id
-    # print(commandList)
   }
 
   return (list("nodes" = nodes, "edges"= edges))
 }
 
 # updates node data in database
-updateNode <- function(graph, aCommand, nodes, edges, propDesc)
+updateNode <- function(graph, aCommand, nodes, edges, mNodes, mEdges)
 {
   print("update node in db")
   aNodeID <- aCommand$id
@@ -144,17 +107,18 @@ updateNode <- function(graph, aCommand, nodes, edges, propDesc)
 
   result <- cypher(graph, aQuery)
   targetLabel = result$labels[1] # assumption: only one label per node
-  #search for the map
-  aProperty <- propDesc[targetLabel]
-  query = paste0("match (n) where id(n)=", aNodeID, " set n.",aProperty, "='", aNodeContent, "'")
-  print (paste ("update query", query))
-
-  # perform update
-  result <- cypher(graph, query)
-
-  #result processing ?
-  #print (paste("result is", result))
-
+  print(targetLabel)
+  # only vizLabel can be changed by user in GUI
+  aProperty <- findMappedProperty(mNodes, mEdges, targetLabel, "vizLabel")
+  if (!aProperty=="NA")
+  {
+    query = paste0("match (n) where id(n)=", aNodeID, " set n.",aProperty, "='", aNodeContent, "'")
+    print (paste ("update query", query))
+    
+    # perform update
+    result <- cypher(graph, query)
+  }
+ 
   return (list("nodes" = nodes, "edges"= edges))
 }
 
@@ -217,7 +181,7 @@ deleteNode <- function(graph, aCommand, nodes, edges)
 
 
 # create cyhper query for reading nodes
-buildNodeQuery <- function(nodeLabel="", aPropertyName, focusNode = NULL)
+buildNodeQuery <- function(nodeLabel="", aPropList, focusNode = NULL)
 {
   nodeExpr = "match (n)"
   clauseExpr = buildNodeLabelExpr(nodeLabel)
@@ -226,14 +190,17 @@ buildNodeQuery <- function(nodeLabel="", aPropertyName, focusNode = NULL)
   {
     clauseExpr <- paste("where id(n)=", focusNode[1], " ")
   }
+  query = paste(nodeExpr, clauseExpr ," return id(n) as id, labels(n) as group" )
   
-  query = paste(nodeExpr, clauseExpr ," return id(n) as id, n.? as label, labels(n) as group")
-  # query = paste(nodeExpr, clauseExpr ," return id(n) as id, n.? as label")
-   if (!is.null(aPropertyName))
-    query <- gsub("?", aPropertyName, query, fixed = TRUE)
-  else
-    query <- gsub("?", "id", query, fixed = TRUE)
+  if (!aPropList["vizLabel"]=="NA")
+      query = paste0(query, ", n.", aPropList["vizLabel"], " as label")
   
+  if (!aPropList["vizTitle"]=="NA")
+      query = paste0(query, ", n.", aPropList["vizTitle"], " as title")
+  
+  if (!aPropList["vizValue"]=="NA")
+    query = paste0(query, ", n.", aPropList["vizValue"], " as value")
+
   print (paste("nodequery", query))
 
   return (list("nQuery"= query, "clauseExpr" = clauseExpr))

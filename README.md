@@ -1,6 +1,8 @@
 # ECGraphEditor
 A small tool to connect to a Neo4j database, edit the network and write it back.
 
+** currently under development. The version of tag V_0.03 is somewhat usable **
+** Objectiv of current work is to implement a meta graph defining propery-label relations instead of old listboxes**
 **This software is pre-alpha, if you want to use it do it at your own risk ! Your Neo4j database may be changed**
 It is intended for non-commercial and non-productive use only.
 

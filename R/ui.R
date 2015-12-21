@@ -4,8 +4,8 @@
 #
 # UI component for getting graphs from Neo4j via RNeo4j, modify and store back
 #
-# author: Hans N. Beck
-# version: alpha
+# (c) and author: Hans N. Beck
+# version: 0.1
 #
 ###########################################################################################
 
@@ -18,26 +18,25 @@ shinyUI(fluidPage(
 
      sidebarLayout(
        sidebarPanel(
-         selectizeInput("selectNodeTypes", "Select node types from DB",
-         choices = list("Label", "Title", selected = "Label"), multiple = TRUE),
          selectizeInput("selectEdgeTypes", "Select edge types from DB",
                         choices = NULL, multiple = TRUE),
-         selectizeInput("labelPropertyMap", "Mapping node properties to label",
-                        choices = list("", selected = "name"),multiple = TRUE,options = list(create = TRUE)),
-         selectizeInput("newType", "Node type (=label in Neo4j) applied for new nodes",
-                        choices = list("newLabel", selected = "newLabel"),multiple = FALSE, options = list(create = TRUE)),
          selectizeInput("newRelation", "Relationship applied for new edges",
                         choices = list("newRelation", selected = "newRelation"),multiple = FALSE, options = list(create = TRUE)),
-         h5("Current label property mapping"),
-         verbatimTextOutput("labelMapping"),
          verbatimTextOutput("modSteps"),
          checkboxInput("improvedLayout", "Use improved layout", value=FALSE),
          actionButton("loadButton", "Load graph"),
          actionButton("updateButton", "Save graph"),
-         sliderInput("nodeSize", "Node size:", min=5, max = 30, value = 20, step = 1)
+         actionButton("metaLoadButton", "Load meta graph"),
+         sliderInput("nodeSize", "Node size:", min=5, max = 30, value = 15, step = 1), width = 3
        ),
        mainPanel(
-         visNetworkOutput("network", width = "100%", height="100%")
+         tags$style(type='text/css','#warnings {color: red; font-size: 14pt;}'),
+         verbatimTextOutput("warnings"),
+         tabsetPanel(
+           tabPanel("Graph", visNetworkOutput("network", width = "100%", height="100%")),
+           tabPanel("Meta Graph", visNetworkOutput("metaNet", width="100%", height="100%")
+           )          
+         )
        )
      )
 ) )

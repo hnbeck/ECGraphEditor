@@ -4,8 +4,8 @@
 #
 # basis component for getting graphs from Neo4j via RNeo4j, modify and store back
 #
-# author: Hans N. Beck
-# version: alpha
+# (c) and author: Hans N. Beck
+# version: 0.1
 #
 ###########################################################################################
 library(igraph)
@@ -90,23 +90,6 @@ appendCommand <- function(aCommandList, aVisCmd)
 
   data <- rbind(aCommandList, aNewFrame)
   return(data)
-
-}
-
-# get the property for node type (= label in neo4j)
-# map is list of entries with pattern "node label -- property name"
-propertyOfType <- function (aMap, aTypeName)
-{
-  for (m in aMap)
-  {
-    # disassemble list entries
-    aRow = unlist(strsplit(m, "--"))
-    if (aRow[1] == aTypeName)
-    {
-      aProperty = aRow[2]
-    }
-  }
-  return (aProperty)
 }
 
 # determine a new ID, take free ids available by deletions into account
@@ -123,21 +106,6 @@ fetchNewId <- function(aVectorofIds, aDataFrame)
     aVectorofIds <<- aVectorofIds[aVectorofIds != newID]
   }
   return(newID)
-}
-
-# create entries for the select widget for selecting properties to label mapping
-# pattern of one entry: "node type --property name"
-createSelectList <- function(aPropDesc, aSelectedNodeList)
-{
-  selectlist <- list()
-  for (n in aSelectedNodeList)
-  {
-    for (e in aPropDesc[n])
-    {
-      selectlist <- c(selectlist, paste0(n, "--", e))
-    }
-  }
-  return (selectlist)
 }
 
 # create node clause for cypher to filter nodes by label
