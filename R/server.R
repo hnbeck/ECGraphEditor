@@ -8,7 +8,7 @@
 # version: 0.1
 #
 ###########################################################################################
-#require(shiny)
+
 library(visNetwork)
 library (stringr)
 source("basis.R")
@@ -51,7 +51,8 @@ shinyServer(function(input, output, session) {
     nodes <<- data$n
     edges <<- data$e
     lcc$invalidate <<-lcc$invalidate +1
-    print ("Graph loaded")
+    lcc$msg <- "Graph loaded"
+    # print ("Graph loaded")
   })
 
   # apply all change commands (add, delete etc.) to neo4j
@@ -102,6 +103,7 @@ shinyServer(function(input, output, session) {
           }
         }
 
+        lcc$msg <- "Graph saved"
         lcc$invalidate <- lcc$invalidate + 1
         commandList <<- NULL
       }
@@ -152,17 +154,32 @@ shinyServer(function(input, output, session) {
         selLabel <- input$network_graphChange$label
         aCmd <- input$network_graphChange
         
-        # aCmd$type <- input$newType
-        if (!is.null(input$metaNet_selected) && input$metaNet_selected != "")
-        {
-          acmd$type <- metaNodes$label[metaNodes$id == input$metaNet_selected]
-          aCmd$map <- findMappedProperty(metaNodes, metaEdges, nodeType, "vizLabel")
-         
-          newNode <- data.frame(id = selId, label = selLabel, group = aCmd$type)
-          nodes <<- rbind(nodes,newNode)
-          aCmd$cmd <- "addNode"
-          commandList <<-  appendCommand (commandList, aCmd)
-        }
+        isolate({
+          if (!is.null(input$metaNet_selected) && input$metaNet_selected != "")
+          {
+            if ((metaNodes$group[metaNodes$id == input$metaNet_selected]) == "nodeType")
+            {
+              aCmd$type <- metaNodes$label[metaNodes$id == input$metaNet_selected]
+              aCmd$map <- findMappedProperty(metaNodes, metaEdges, aCmd$type, "vizLabel")
+              
+              newNode <- data.frame(id = selId, label = selLabel, group = aCmd$type, value=1, orgValue=1)
+              nodes <<- rbind(nodes,newNode)
+              aCmd$cmd <- "addNode"
+              commandList <<-  appendCommand (commandList, aCmd)   
+              lcc$msg <- "Save graph to reflect changes !"
+            }
+            else
+            {
+              lcc$msg <- "Denied: Ensure that a meta node of type 'nodeType' is selected"
+              lcc$invalidate <- lcc$invalidate + 1
+            }
+          }
+          else
+          {
+            lcc$msg <- "Ensure that a meta node of type 'nodeType' is selected"
+            lcc$invalidate <- lcc$invalidate + 1
+          }
+        })
       }
       
       if (input$network_graphChange$cmd =="editNode")
@@ -175,6 +192,7 @@ shinyServer(function(input, output, session) {
         aCmd$type <- ""
         nodes$label[nodes$id==selId] <<- selLabel
         commandList <<-  appendCommand (commandList, aCmd)
+        lcc$msg <- "Save graph to reflect changes !"
       }
 
       if (input$network_graphChange$cmd == "addEdge")
@@ -193,6 +211,7 @@ shinyServer(function(input, output, session) {
         # if redraw/reload necessary uncomment this
         # lcc$invalidate <- lcc$invalidate+1
         commandList <<- appendCommand(commandList, aCmd)
+        lcc$msg <- "Save graph to reflect changes !"
       }
       if (input$network_graphChange$cmd == "deleteElements")
       {
@@ -222,6 +241,7 @@ shinyServer(function(input, output, session) {
             commandList <<- appendCommand(commandList, aCmd)
           }
         }
+        lcc$msg <- "Save graph to reflect changes !"
       }
     }
   })

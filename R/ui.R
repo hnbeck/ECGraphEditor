@@ -9,7 +9,6 @@
 #
 ###########################################################################################
 
-#require(shiny)
 library(shinydashboard)
 require(visNetwork)
 
@@ -27,31 +26,37 @@ dashboardPage(
   
   dashboardBody(
     fluidRow(
-      column(width=12,
-        tabBox(width = NULL,
-          tabPanel("Meta Graph",
-              tags$div(class="netOutput", id="meta",
-                visNetworkOutput("metaNet", height="80%")),
+      column(width = 7,
+             box(width = NULL, 
+                 #tabPanel("Graph",
+                 #tags$div(class="netOutput", id="std",
+                 visNetworkOutput("network", height=700),
+                 tags$div(class="buttons", 
+                          actionButton("loadButton", "Load graph"),
+                          actionButton("updateButton", "Save graph")), 
+                 tags$style(type='text/css','.buttons {margin: 10pt; align:center;}' )
+             )
+             
+      ),
+      
+      column(width = 5,
+        box(width= NULL, 
+          #tabPanel("Meta Graph",
+              #tags$div(class="netOutput", id="meta",
+              visNetworkOutput("metaNet", height=600),
               actionButton("metaLoadButton", "Load meta graph")
-              ),
-          tabPanel("Graph",
-                  tags$div(class="netOutput", id="std",
-                    visNetworkOutput("network", height="80%")),
-                  tags$div(class="buttons", 
-                           actionButton("loadButton", "Load graph"),
-                           actionButton("updateButton", "Save graph")), 
-                  tags$style(type='text/css','.buttons {margin: 10pt; align:center;}' )
-                  )
-                        
-              ),
-              box(width = 0, 
+              )
+          )
+      ),
+      fluidRow(
+              box(width = NULL, 
                   verbatimTextOutput("warnings"),
                   tags$style(type='text/css','#warnings {color: red; font-size: 14pt;}')
-              ),
-              tags$style(type='text/css','.netOutput {max-height:600px;}')
+              )
+              #tags$style(type='text/css','.netOutput {max-height:600px;}')
           )
           
       )
   )
-)
+
 
