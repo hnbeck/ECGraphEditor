@@ -32,12 +32,12 @@ In general the workflow
 - ECGraphEditor connects to the current Neo4J db 
 - you see two panels: a meta graph and the graph itself
 - decide which kind of nodes and properties to load from db for the graph:
-	-- delete nodes of kind "nodeType" in meta graph if you do not want to load nodes with such label
-	-- add edges from "labels" nodes to "properties" nodes to decide which properties has to be shown
+	+ delete nodes of kind "nodeType" in meta graph if you do not want to load nodes with such label
+	+ add edges from "labels" nodes to "properties" nodes to decide which properties has to be shown
 		as node label, used as value field and used as popup title. Only one edge from a selected
 		"labels" node to a "properties" node is possible ! 
-	-- only "properties" nodes can be added for meta graph. If required, reload the meta graph for corrections. 
-	-- please note that only node labels can be edited in the graph. Therefore by the meta graph mapping, you
+	+ only "properties" nodes can be added for meta graph. If required, reload the meta graph for corrections. 
+	+ please note that only node labels can be edited in the graph. Therefore by the meta graph mapping, you
 	   also decide which properties to edit and save.
 - load graph, edit
 - save graph back to Neo4J
