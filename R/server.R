@@ -15,13 +15,7 @@ source("basis.R")
 source("graphIO.R")
 source ("metaGRaph.R")
 
-# nodes data frame
-# nodes <- globalenv()
-metaNodes <<- NULL
-# edges date frame
-# edges <<- globalenv()
-# thats for visNetwork don't throw an errow with empty data
-metaEdges <- data.frame(id = "", from = "", to = "")
+
 # a data frame (interpreted as list) of graph change commands
 commandList <<- NULL
 vizAspects <<- c("vizLabel", "vizTitle", "vizValue")
@@ -35,24 +29,30 @@ propDesc <<- vector() # property description
 
 
 shinyServer(function(input, output, session) {
-#function(input, output, session) {
 
+  # init nodes data frame
+  metaNodes <<- NULL
+  # init edges date frame
+  # thats for visNetwork don't throw an errow with empty data
+  metaEdges <<- data.frame(id = "", from = "", to = "")
   lcc <- reactiveValues( invalidate = 0 , metaInvalidate = 0, msg = "")
   
   # load a graph from neo4j
   updateGraphData <- eventReactive(input$loadButton, {
     edgeTypesFilter <- input$selectEdgeTypes
     focusNode <- NULL
+    
     if (!is.null(input$network_selected) && input$network_selected != "")
     {
       focusNode <- list(input$network_selected, nodes$group[nodes$id == input$network_selected])
     }
+    
     data <- loadGraph(graph, metaNodes, metaEdges, edgeTypesFilter, focusNode)
     nodes <<- data$n
     edges <<- data$e
     lcc$invalidate <<-lcc$invalidate +1
     lcc$msg <- "Graph loaded"
-    # print ("Graph loaded")
+  
   })
 
   # apply all change commands (add, delete etc.) to neo4j
@@ -78,10 +78,9 @@ shinyServer(function(input, output, session) {
           }
           if (c$cmd == "editNode")
           {
-          print ("arrived")
-           data <- updateNode(graph, c, nodes, edges, metaNodes, metaEdges)
-           nodes <<- data$nodes
-           edges <<-data$edges
+            data <- updateNode(graph, c, nodes, edges, metaNodes, metaEdges)
+            nodes <<- data$nodes
+            edges <<-data$edges
           }
           if (c$cmd == "addEdge")
           {
@@ -150,37 +149,33 @@ shinyServer(function(input, output, session) {
     {
       if (input$network_graphChange$cmd =="addNode")
       {
-        selId <- input$network_graphChange$id
-        selLabel <- input$network_graphChange$label
-        aCmd <- input$network_graphChange
-        
         isolate({
-          if (!is.null(input$metaNet_selected) && input$metaNet_selected != "")
-          {
-            if ((metaNodes$group[metaNodes$id == input$metaNet_selected]) == "nodeType")
-            {
-              aCmd$type <- metaNodes$label[metaNodes$id == input$metaNet_selected]
-              aCmd$map <- findMappedProperty(metaNodes, metaEdges, aCmd$type, "vizLabel")
-              
-              newNode <- data.frame(id = selId, label = selLabel, group = aCmd$type, value=1, orgValue=1)
-              nodes <<- rbind(nodes,newNode)
-              aCmd$cmd <- "addNode"
-              commandList <<-  appendCommand (commandList, aCmd)   
-              lcc$msg <- "Save graph to reflect changes !"
-            }
-            else
-            {
+  
+            selId <- input$network_graphChange$id
+            selLabel <- input$network_graphChange$label
+            aCmd <- input$network_graphChange
+            
+            # metaNet_selected my be Null or "" -> nothing in meta graph selected
+            tryCatch({
+              if ((metaNodes$group[metaNodes$id == input$metaNet_selected]) == "nodeType")
+              {
+                aCmd$type <- metaNodes$label[metaNodes$id == input$metaNet_selected]
+                aCmd$map <- findMappedProperty(metaNodes, metaEdges, aCmd$type, "vizLabel")
+                
+                newNode <- data.frame(id = selId, label = selLabel, group = aCmd$type, value = 1, orgValue = 1)
+                nodes <- rbind(nodes,newNode)
+                aCmd$cmd <- "addNode"
+                commandList <<-  appendCommand (commandList, aCmd)   
+                lcc$msg <- "Save graph to reflect changes !"
+              }
+            },
+            finally = {
               lcc$msg <- "Denied: Ensure that a meta node of type 'nodeType' is selected"
               lcc$invalidate <- lcc$invalidate + 1
-            }
-          }
-          else
-          {
-            lcc$msg <- "Ensure that a meta node of type 'nodeType' is selected"
-            lcc$invalidate <- lcc$invalidate + 1
-          }
-        })
-      }
+              
+            })
+          })
+        }
       
       if (input$network_graphChange$cmd =="editNode")
       {
@@ -345,7 +340,8 @@ shinyServer(function(input, output, session) {
                    highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
         visLayout(improvedLayout = input$improvedLayout, randomSeed = 20) %>%
         visLegend(position="left") %>%
-        visNodes (size=input$nodeSize)
+        visNodes (size=10)%>%
+        visEdges (length=input$edgeLength)
     
   })
   
