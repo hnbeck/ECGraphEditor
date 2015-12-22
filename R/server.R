@@ -1,6 +1,6 @@
 ###########################################################################################
 #
-# Sertver.R
+# server.R
 #
 # Server component for getting graphs from Neo4j via RNeo4j, modify and store back
 #
@@ -8,18 +8,18 @@
 # version: 0.1
 #
 ###########################################################################################
-require(shiny)
-require(visNetwork)
-require (stringr)
+#require(shiny)
+library(visNetwork)
+library (stringr)
 source("basis.R")
 source("graphIO.R")
 source ("metaGRaph.R")
 
 # nodes data frame
-nodes <- globalenv()
+# nodes <- globalenv()
 metaNodes <<- NULL
 # edges date frame
-edges <<- globalenv()
+# edges <<- globalenv()
 # thats for visNetwork don't throw an errow with empty data
 metaEdges <- data.frame(id = "", from = "", to = "")
 # a data frame (interpreted as list) of graph change commands
@@ -35,6 +35,7 @@ propDesc <<- vector() # property description
 
 
 shinyServer(function(input, output, session) {
+#function(input, output, session) {
 
   lcc <- reactiveValues( invalidate = 0 , metaInvalidate = 0, msg = "")
   

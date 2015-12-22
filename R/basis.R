@@ -1,6 +1,6 @@
 ###########################################################################################
 #
-# baiss.R
+# basis.R
 #
 # basis component for getting graphs from Neo4j via RNeo4j, modify and store back
 #

@@ -1,6 +1,6 @@
 ###########################################################################################
 #
-# GraphIO.R
+# graphIO.R
 #
 # IO component for getting graphs from Neo4j via RNeo4j, modify and store back
 #

@@ -82,7 +82,7 @@ buildMetaGraph <- function (nodeDesc, edgeDesc, propDesc)
   return (list("metaNodes" = mNodes, "metaEdges" = mEdges))
 }
 
-#vizAspect is "vizLabel" or "vizValue" or "vizTitle"
+#vizAspect: see server.R for possible values
 findMappedProperty <- function (mNodes, mEdges, targetLabel, vizAspect)
 {
   # thats because is.na() doesn't work for me, don't know why

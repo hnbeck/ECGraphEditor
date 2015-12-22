@@ -11,6 +11,7 @@ This tool uses and requires
 
 - **RNeo4j** from Nicole White [details here] (http://github.com/nicolewhite/RNeo4j)
 - **visNetwork** 0.2.0 (not released yet) from Benoit Thieurmel [details here] (http://dataknowledge.github.io/visNetwork/)
+- **shinyDashboard** 0.5.1 from Winston Chang (http://github.com/rstudio/shinydaahboard.git)
 
 This tool needs a running
 
@@ -28,7 +29,7 @@ My fork of visNetwork is available at  [hnbeck/visNetwork](https://github.com/hn
 In general the workflow
 
 - run a Neo4j database
-- open the server.R and ui.R file in RStudio and so "Run Application" to start the Shiny application
+- open the server.R and ui.R file in **RStudio** and so "Run Application" to start the Shiny application
 - ECGraphEditor connects to the current Neo4J db and asks for labels, properties for nodes and relationship types
 - you select which labels and relationships to load
 - you select which property of the nodes (one per node of selected label) are displayed in graph
