@@ -2,7 +2,7 @@
 #
 # graphIO.R
 #
-# IO component for getting graphs from Neo4j via RNeo4j, modify and store back
+# IO component for loading graphs from Neo4j via RNeo4j, modify and store back
 #
 # (c) and author: Hans N. Beck
 # version: 0.1
@@ -11,19 +11,21 @@
 
 # note: at this level, we talk about node labels and node properties
 # this are terms on neo4j level
-require(igraph)
+library(igraph)
 
 # connection to neo4j database
 graph = startGraph("http://localhost:7474/db/data")
 
 loadGraph <- function (graph, mNodes, mEdges,edgeTypesFilter, filterID = NULL)
 {
+  # inits
   nodes <- NULL
   propertyList <- list()
+  
   print("Load graph")
  
   # for all required node labels
-  for (nl in mNodes$label[mNodes$group == "nodeType"])
+  for (nl in mNodes$label[mNodes$group == metaElements$label])
   {
       for (vA in vizAspects)
         propertyList[vA] <- findMappedProperty(mNodes, mEdges, nl, vA)
@@ -82,7 +84,7 @@ addNode <- function(graph, aCommand, nodes, edges, lcc)
   if (length(result) == 0)
   {
     # erzeuge knoten
-    query = paste0("create (n:", aNewNodeLabel ,"{", aProperty, ": '", aNodeContent, "'}) return id(n) as id")
+    query = paste0("create (n:", aNewNodeLabel ," {", aProperty, ": '", aNodeContent, "'}) return id(n) as id")
     print(query)
     result <- cypher(graph, query)
     # print (paste("reuslt ", result))
@@ -114,7 +116,7 @@ updateNode <- function(graph, aCommand, nodes, edges, mNodes, mEdges)
   result <- cypher(graph, aQuery)
   targetLabel = result$labels[1] # assumption: only one label per node
   # only vizLabel can be changed by user in GUI
-  aProperty <- findMappedProperty(mNodes, mEdges, targetLabel, "vizLabel")
+  aProperty <- findMappedProperty(mNodes, mEdges, targetLabel, vizAspects$label)
   if (!aProperty=="NA")
   {
     query = paste0("match (n) where id(n)=", aNodeID, " set n.",aProperty, "='", aNodeContent, "'")
@@ -197,14 +199,14 @@ buildNodeQuery <- function(nodeLabel="", aPropList, focusNode = NULL)
   }
   query = paste(nodeExpr, clauseExpr ," return id(n) as id, labels(n) as group" )
   
-  if (!aPropList["vizLabel"]=="NA")
-      query = paste0(query, ", n.", aPropList["vizLabel"], " as label")
+  if (!aPropList[vizAspects$label]=="NA")
+      query = paste0(query, ", n.", aPropList[vizAspects$label], " as label")
   
-  if (!aPropList["vizTitle"]=="NA")
-      query = paste0(query, ", n.", aPropList["vizTitle"], " as title")
+  if (!aPropList[vizAspects$title]=="NA")
+      query = paste0(query, ", n.", aPropList[vizAspects$title], " as title")
   
-  if (!aPropList["vizValue"]=="NA")
-    query = paste0(query, ", n.", aPropList["vizValue"], " as value")
+  if (!aPropList[vizAspects$value]=="NA")
+    query = paste0(query, ", n.", aPropList[vizAspects$value], " as value")
 
   print (paste("nodequery", query))
 

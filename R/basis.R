@@ -15,6 +15,10 @@ library(RNeo4j)
 # note: at this level, we talk about node labels and node properties
 # this are terms on neo4j level
 
+toVector <- function(aList)
+{
+  return (c(unlist(aList, use.names=FALSE)))
+}
 # help function to append element to list
 appendList<-function(aList, element)
 {

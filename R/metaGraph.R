@@ -15,6 +15,7 @@ loadMetaGraph <- function(graph)
   nQuery = "match (n) return distinct labels(n) as labels"
   eQuery = "match (n)-[r]->(m) return distinct type(r) as types"
   propQuery = "match (n:?) return distinct keys(n) as keys"
+ 
   result <- cypher(graph, nQuery)
   nodeDesc <- result$labels
   result <- cypher(graph, eQuery)
@@ -58,15 +59,17 @@ buildMetaGraph <- function (nodeDesc, edgeDesc, propDesc)
 {
   mEdges <- data.frame()
   # take meta nodes: every existing label becomes a node in meta graph
-  mNodes <- data.frame(id = nodeDesc, label = nodeDesc, group = "nodeType")
+  mNodes <- data.frame(id = nodeDesc, label = nodeDesc, group = metaElements$label)
+  
   # every existing property becomes a node in meta graph
-  newFrame <- data.frame(id = unique(propDesc$key), label = unique(propDesc$key), group = "Properties")
+  newFrame <- data.frame(id = unique(propDesc$key), label = unique(propDesc$key), group = metaElements$props)
   mNodes <- rbind(mNodes, newFrame)
-  # add the basic  nodes
-  newFrame <- data.frame(id = vizAspects, label = c("Label", "Title",  "Value"), group = "Labels")
+ 
+   # add the basic  nodes
+  newFrame <- data.frame(id = toVector(vizAspects), label = c("Label", "Title",  "Value"), group = metaElements$aspects)
   mNodes <- rbind(mNodes, newFrame)
   
-  # print(mNodes)
+  #print(mNodes)
   # now build edges: which properties exist in what node (selected by their label)
   idCount= 1;
   for (k in unique(propDesc$key))

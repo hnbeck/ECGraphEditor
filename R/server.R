@@ -18,7 +18,12 @@ source ("metaGRaph.R")
 
 # a data frame (interpreted as list) of graph change commands
 commandList <<- NULL
-vizAspects <<- c("vizLabel", "vizTitle", "vizValue")
+
+# that are the aspects which can be vizualized by visNetwork or vis.js, respectivly
+# they are used as id of the meta graph nodes, possibly metaElements can be used in future
+vizAspects <<- list(label="vizLabel", title="vizTitle", value="vizValue")
+# thats the possible nodes of the meta graph
+metaElements <<-list(label="Labels", props = "Properties", aspects="Aspects")
 
 # general remark: vis.js handle ids and labels
 # the label will be mapped to one (selected) node property
@@ -149,31 +154,32 @@ shinyServer(function(input, output, session) {
     {
       if (input$network_graphChange$cmd =="addNode")
       {
-        isolate({
-  
+          # metaNet_selected my be Null or "" -> nothing in meta graph selected
+          tryCatch({
+            
             selId <- input$network_graphChange$id
             selLabel <- input$network_graphChange$label
             aCmd <- input$network_graphChange
             
-            # metaNet_selected my be Null or "" -> nothing in meta graph selected
-            tryCatch({
-              if ((metaNodes$group[metaNodes$id == input$metaNet_selected]) == "nodeType")
-              {
-                aCmd$type <- metaNodes$label[metaNodes$id == input$metaNet_selected]
-                aCmd$map <- findMappedProperty(metaNodes, metaEdges, aCmd$type, "vizLabel")
-                
-                newNode <- data.frame(id = selId, label = selLabel, group = aCmd$type, value = 1, orgValue = 1)
-                nodes <- rbind(nodes,newNode)
-                aCmd$cmd <- "addNode"
-                commandList <<-  appendCommand (commandList, aCmd)   
-                lcc$msg <- "Save graph to reflect changes !"
-              }
-            },
-            finally = {
-              lcc$msg <- "Denied: Ensure that a meta node of type 'nodeType' is selected"
-              lcc$invalidate <- lcc$invalidate + 1
+            if ((metaNodes$group[metaNodes$id == input$metaNet_selected]) == metaElements$label)
+            {
               
-            })
+              aCmd$type <- metaNodes$label[metaNodes$id == input$metaNet_selected]
+              print("type")
+              print( aCmd$type)
+              aCmd$map <- findMappedProperty(metaNodes, metaEdges, aCmd$type, vizAspects$label)
+              
+              newNode <- data.frame(id = selId, label = selLabel, group = aCmd$type, value = 1, orgValue = 1)
+              nodes <<- rbind(nodes,newNode)
+              aCmd$cmd <- "addNode"
+              commandList <<-  appendCommand (commandList, aCmd)   
+              lcc$msg <- "Save graph to reflect changes !"
+            }
+          },
+          error = function(e) {
+            lcc$msg <- "Denied: Ensure that a meta node of type 'Labels' is selected"
+            lcc$invalidate <- lcc$invalidate + 1
+            
           })
         }
       
@@ -252,9 +258,8 @@ shinyServer(function(input, output, session) {
         selId <- input$metaNet_graphChange$label
         selLabel <- input$metaNet_graphChange$label
         # the only nodes which can be added in the meta graph are property nodes
-        newNode <- data.frame(id = selId, label = selLabel, group = "Properties")
+        newNode <- data.frame(id = selId, label = selLabel, group = input$metaNodeTypes)
         metaNodes <<- rbind(metaNodes,newNode)
-        lcc$msg <- "Only property nodes can be added in meta graph"
         lcc$metaInvalidate <- lcc$metaInvalidate + 1
       }
       
