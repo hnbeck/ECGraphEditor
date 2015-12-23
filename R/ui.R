@@ -28,9 +28,9 @@ dashboardPage(
   dashboardBody(
     fluidRow(
       column(width = 7,
-             box(width = NULL, 
+             box(title = "Graph", solidHeader = TRUE, status="primary", collapsible = TRUE, width = NULL, 
                  tags$div(class="netOutput", id="std",
-                   visNetworkOutput("network", height=700)
+                   visNetworkOutput("network", height=600)
                    ),
                  tags$div(class="buttons", 
                           actionButton("loadButton", "Load graph"),
@@ -41,9 +41,9 @@ dashboardPage(
       ),
       
       column(width = 5,
-        box(width= NULL, 
+        box(title= "Meta graph", solidHeader = TRUE, status="primary", collapsible = TRUE,  width= NULL, 
               tags$div(class="netOutput", id="meta",
-              visNetworkOutput("metaNet", height=600)
+              visNetworkOutput("metaNet", height=500)
               ),
               tags$table(class="metaButtons", 
                          tags$tr(
@@ -63,7 +63,7 @@ dashboardPage(
       fluidRow(
               box(width = NULL, 
                   verbatimTextOutput("warnings"),
-                  tags$style(type='text/css','#warnings {color: red; font-size: 12pt; font-weight: bold;}')
+                  tags$style(type='text/css','#warnings {color: red; font-size: 10pt; font-weight: bold;}')
               )
           ),
       tags$style(type='text/css','.netOutput {max-height:600px;}')

@@ -98,6 +98,8 @@ addNode <- function(graph, aCommand, nodes, edges, lcc)
     # because this commands include the ids of vis.js at this time
     commandList$from[commandList$from == aNodeID] <<- result$id
     commandList$to[commandList$to== aNodeID] <<- result$id
+    # update all commands running after this
+    commandList$id[commandList$id == aNodeID] <<- result$id
   }
 
   return (list("nodes" = nodes, "edges"= edges))

@@ -55,7 +55,7 @@ appendCommand <- function(aCommandList, aVisCmd)
                             type=aVisCmd$typ,
                             from=0,
                             to=0,
-                            prio=1)
+                            prio=2)
   }
 
   if (aVisCmd$cmd =="addEdge")
@@ -67,7 +67,7 @@ appendCommand <- function(aCommandList, aVisCmd)
                             type=aVisCmd$type,
                             from=aVisCmd$from,
                             to=aVisCmd$to,
-                            prio=2)
+                            prio=3)
   }
   if (aVisCmd$cmd =="deleteEdge")
   {
@@ -78,7 +78,7 @@ appendCommand <- function(aCommandList, aVisCmd)
                             type="",
                             from=0,
                             to=0,
-                            prio=3)
+                            prio=4)
   }
   if (aVisCmd$cmd =="deleteNode")
   {
@@ -89,7 +89,7 @@ appendCommand <- function(aCommandList, aVisCmd)
                             type="",
                             from=0,
                             to=0,
-                            prio=4)
+                            prio=5)
   }
 
   data <- rbind(aCommandList, aNewFrame)

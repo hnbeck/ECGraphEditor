@@ -47,7 +47,7 @@ loadMetaGraph <- function(graph)
       newRow <- data.frame(label = "default", key = e)
       propDesc <- rbind(propDesc, newRow)
     }
-    nodeDesc <- list("default")
+    nodeDesc <- c("default")
   }
   
   return (list(nDesc = nodeDesc, eDesc =edgeDesc, pDesc = propDesc))
@@ -57,31 +57,35 @@ loadMetaGraph <- function(graph)
 # from vizAspect to property, from property to label 
 buildMetaGraph <- function (nodeDesc, edgeDesc, propDesc)
 {
-  mEdges <- data.frame()
+  mEdges <- data.frame(id = "", from = "", to = "")
+  
+  # build basic meta nodes
+  mNodes <- data.frame(id = toVector(vizAspects), label = c("Label", "Title",  "Value"), group = metaElements$aspects)
   # take meta nodes: every existing label becomes a node in meta graph
-  mNodes <- data.frame(id = nodeDesc, label = nodeDesc, group = metaElements$label)
+  newFrame <- data.frame(id = nodeDesc, label = nodeDesc, group = metaElements$label)
+  mNodes <- rbind(mNodes, newFrame)
   
   # every existing property becomes a node in meta graph
-  newFrame <- data.frame(id = unique(propDesc$key), label = unique(propDesc$key), group = metaElements$props)
-  mNodes <- rbind(mNodes, newFrame)
- 
-   # add the basic  nodes
-  newFrame <- data.frame(id = toVector(vizAspects), label = c("Label", "Title",  "Value"), group = metaElements$aspects)
-  mNodes <- rbind(mNodes, newFrame)
+  if (length(unlist(propDesc$key))>0)
+  {
+    newFrame <- data.frame(id = unique(propDesc$key), label = unique(propDesc$key), group = metaElements$props)
+    mNodes <- rbind(mNodes, newFrame)
+    idCount= 1;
+    # now build edges: which properties exist in what node (selected by their label)
+    for (k in unique(propDesc$key))
+    {
+      toID = propDesc$label[propDesc$key==k]
+      fromID = k
+      a = idCount
+      b = idCount + length(toID) -1
+      newRow <- data.frame(id = c(a:b), from = fromID, to=toID)
+      mEdges <- rbind(mEdges, newRow)
+      idCount = idCount + length(toID)
+    }
+  }
   
   #print(mNodes)
-  # now build edges: which properties exist in what node (selected by their label)
-  idCount= 1;
-  for (k in unique(propDesc$key))
-  {
-    toID = propDesc$label[propDesc$key==k]
-    fromID = k
-    a = idCount
-    b = idCount + length(toID) -1
-    newRow <- data.frame(id = c(a:b), from = fromID, to=toID)
-    mEdges <- rbind(mEdges, newRow)
-    idCount = idCount + length(toID)
-  }
+  
   return (list("metaNodes" = mNodes, "metaEdges" = mEdges))
 }
 

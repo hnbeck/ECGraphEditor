@@ -165,8 +165,6 @@ shinyServer(function(input, output, session) {
             {
               
               aCmd$type <- metaNodes$label[metaNodes$id == input$metaNet_selected]
-              print("type")
-              print( aCmd$type)
               aCmd$map <- findMappedProperty(metaNodes, metaEdges, aCmd$type, vizAspects$label)
               
               newNode <- data.frame(id = selId, label = selLabel, group = aCmd$type, value = 1, orgValue = 1)
@@ -174,6 +172,7 @@ shinyServer(function(input, output, session) {
               aCmd$cmd <- "addNode"
               commandList <<-  appendCommand (commandList, aCmd)   
               lcc$msg <- "Save graph to reflect changes !"
+              lcc$invalidate <- lcc$invalidate + 1
             }
           },
           error = function(e) {
@@ -193,6 +192,7 @@ shinyServer(function(input, output, session) {
         aCmd$type <- ""
         nodes$label[nodes$id==selId] <<- selLabel
         commandList <<-  appendCommand (commandList, aCmd)
+        lcc$invalidate <- lcc$invalidate + 1
         lcc$msg <- "Save graph to reflect changes !"
       }
 
@@ -207,7 +207,7 @@ shinyServer(function(input, output, session) {
         aCmd$map <- NULL
         aCmd$type <- input$newRelation
 
-        newEdge <- data.frame(id = selId, from= selFrom, to=selTo, label="")
+        newEdge <- data.frame(id = selId, from= selFrom, to=selTo, label=aCmd$type)
         edges <<- rbind(edges,newEdge)
         # if redraw/reload necessary uncomment this
         # lcc$invalidate <- lcc$invalidate+1
@@ -315,7 +315,7 @@ shinyServer(function(input, output, session) {
     updateGraphData()
 
     lcc$invalidate #for reactiveness, this invalidate will be incremented every time a redraw is necessary
-    
+   
     # apply scale facor from the slider to the value field
     # the value field will not be written back to data base 
     nodes$value <- lapply(nodes$orgValue, function(x) {if (is.numeric(x) && !is.na(x)) x*input$nodeSize else as.numeric(input$nodeSize)})
@@ -326,7 +326,7 @@ shinyServer(function(input, output, session) {
       visInteraction(navigationButtons = TRUE) %>%
       visOptions(manipulation = TRUE,
                  highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
-      visLayout(improvedLayout = input$improvedLayout, randomSeed = 20) %>%
+      visLayout(improvedLayout = input$improvedLayout, randomSeed = 120) %>%
       visLegend(position="left") 
   })
   
@@ -336,7 +336,7 @@ shinyServer(function(input, output, session) {
     
       #for reactiveness
       lcc$metaInvalidate
-      
+      lcc$msg<-"Meta graph changed, reload of graph required"
       visNetwork(metaNodes, metaEdges) %>%
         visEdges(arrow="to") %>%
         visPhysics(stabilization = FALSE) %>%
