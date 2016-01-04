@@ -11,7 +11,7 @@ It is intended for non-commercial and non-productive use only.
 This tool uses and requires
 
 - **RNeo4j** from Nicole White [details here] (http://github.com/nicolewhite/RNeo4j)
-- **visNetwork** 0.2.0 (not released yet) from Benoit Thieurmel [details here] (http://dataknowledge.github.io/visNetwork/)
+- **visNetwork** 0.2.0 from Benoit Thieurmel [details here] (http://dataknowledge.github.io/visNetwork/)
 - **shinyDashboard** 0.5.1 from Winston Chang (http://github.com/rstudio/shinydaahboard.git)
 
 This tool needs a running
@@ -21,11 +21,6 @@ This tool needs a running
 Thanks for this very useful packages !
 
 ## Usage
-**Attention:** at this moment in time, this tool can be used only with my adaption of visNetwork
-It is not clear when this changes will be adapted (if ever) by the mainstream visNetwork. If not, 
-my changes will be integrated in this repository.
-
-My fork of visNetwork is available at  [hnbeck/visNetwork](https://github.com/hnbeck/visNetwork.git)
 
 In general the workflow is
 
