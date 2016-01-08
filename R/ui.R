@@ -12,6 +12,7 @@
 require(shinydashboard)
 require(visNetwork)
 
+metaElements <<-list(label="Labels", props = "Properties", aspects="Aspects")
 
 dashboardPage(
   dashboardHeader(title = "EC Graph Editor"),
