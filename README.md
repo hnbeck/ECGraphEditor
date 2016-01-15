@@ -2,7 +2,7 @@
 A small tool to connect to a Neo4j database, edit the network and write it back.
 
 **currently under development.**
-**This software is alpha, V_0.1, if you want to use it do it at your own risk ! Your Neo4j database may be changed**
+**This software is alpha, V_0.11, if you want to use it do it at your own risk ! Your Neo4j database may be changed**
 
 This version is intended for testing.
 It is intended for non-commercial and non-productive use only.
