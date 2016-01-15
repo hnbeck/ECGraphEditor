@@ -58,6 +58,7 @@ dashboardPage(
               tags$style(type='text/css','.metaButtons { margin: 0pt; align:center; width=100%; border:0px;}'),
               tags$style(type='text/css','#button1 { border:0px; vertical-align:center;}'),
               tags$style(type='text/css','#button2 {  border:0px;padding-top: 11pt; padding-left:2pt; vertical-align:center;}')
+            
               )
           )
       ),
@@ -67,8 +68,11 @@ dashboardPage(
                   tags$style(type='text/css','#warnings {color: red; font-size: 10pt; font-weight: bold;}')
               )
           ),
-      tags$style(type='text/css','.netOutput {max-height:600px;}')
-          
+      tags$style(type='text/css','.netOutput {max-height:600px;}'),
+      # this is a hack, there should be a better way over options in visNetwork in future
+      tags$style(type='text/css','#node-label {background-color:light-grey; width:300px }'),
+      tags$style(type='text/css','#node-id {background-color:light-grey; width:300px }'),
+      tags$style(type='text/css','#network-popUp { margin:20px; width:400px;}')
       )
   )
 
