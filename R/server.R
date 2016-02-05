@@ -3,14 +3,16 @@
 # server.R
 #
 # Server component for getting graphs from Neo4j via RNeo4j, modify and store back
+# please read metaGraph.R comment for understanding graphs and meta graphs
 #
 # (c) and author: Hans N. Beck
 # version: 0.1
 #
 ###########################################################################################
 
-library(visNetwork)
-library (stringr)
+require(visNetwork)
+require (stringr)
+require(uuid)
 source("basis.R")
 source("graphIO.R")
 source ("metaGRaph.R")
@@ -19,18 +21,21 @@ source ("metaGRaph.R")
 # a data frame (interpreted as list) of graph change commands
 commandList <<- NULL
 
-# that are the aspects which can be vizualized by visNetwork or vis.js, respectivly
-# they are used as id of the meta graph nodes, possibly metaElements can be used in future
+# that are the aspects which can be visualized by visNetwork or vis.js, respectivly
+# they are used as id of the meta graph nodes
 vizAspects <<- list(label="vizLabel", title="vizTitle", value="vizValue")
 # thats the possible nodes of the meta graph
-metaElements <<-list(label="Labels", props = "Properties", aspects="Aspects")
+
+constMetaLabel <<- "Label"
+constMetaProperty <<- "Properties"
+constMetaAspect <<- "Aspects"
 
 # general remark: vis.js handle ids and labels
 # the label will be mapped to one (selected) node property
 # NOTE: on vis.js level, a node has a type, a label and ID
 # this type is called "label" at neo4j level
 # a neo4j node of a selected label as properties
-propDesc <<- vector() # property description
+propDesc <<- c(key=NA) # property description
 
 
 shinyServer(function(input, output, session) {
@@ -44,17 +49,20 @@ shinyServer(function(input, output, session) {
   
   # load a graph from neo4j
   updateGraphData <- eventReactive(input$loadButton, {
+    
+    lcc$msg <- "Load Graph..."
     edgeTypesFilter <- input$selectEdgeTypes
     focusNode <- NULL
     
     if (!is.null(input$network_selected) && input$network_selected != "")
     {
-      focusNode <- list(input$network_selected, nodes$group[nodes$id == input$network_selected])
+      focusNode <- list(input$network_selected, myNodes$group[myNodes$id == input$network_selected])
     }
     
-    data <- loadGraph(graph, metaNodes, metaEdges, edgeTypesFilter, focusNode)
-    nodes <<- data$n
-    edges <<- data$e
+    data <- loadGraph(graph, metaNodes, metaEdges, edgeTypesFilter, focusNode, input$lonlyNodes)
+    
+    myNodes <<- data$n
+    myEdges <<- data$e
     lcc$invalidate <<-lcc$invalidate +1
     lcc$msg <- "Graph loaded"
   
@@ -77,33 +85,33 @@ shinyServer(function(input, output, session) {
 
           if (c$cmd == "addNode")
           {
-            data <- addNode(graph, c, nodes, edges)
-            nodes <<- data$nodes
-            edges <<-data$edges
+            data <- addNode(graph, c, myNodes, myEdges)
+            myNodes <<- data$nodes
+            myEdges <<-data$edges
           }
           if (c$cmd == "editNode")
           {
-            data <- updateNode(graph, c, nodes, edges, metaNodes, metaEdges)
-            nodes <<- data$nodes
-            edges <<-data$edges
+            data <- updateNode(graph, c, myNodes, myEdges, metaNodes, metaEdges)
+            myNodes <<- data$nodes
+            myEdges <<-data$edges
           }
           if (c$cmd == "addEdge")
           {
-            data <- addEdge(graph, c, nodes, edges)
-            nodes <<- data$nodes
-            edges <<-data$edges
+            data <- addEdge(graph, c, myNodes, myEdges)
+            myNodes <<- data$nodes
+            myEdges <<-data$edges
           }
           if (c$cmd == "deleteEdge")
           {
-            data <- deleteEdge(graph, c, nodes, edges)
-            nodes <<- data$nodes
-            edges <<-data$edges
+            data <- deleteEdge(graph, c, myNodes, myEdges)
+            myNodes <<- data$nodes
+            myEdges <<-data$edges
           }
           if (c$cmd == "deleteNode")
           {
-            data <- deleteNode(graph, c, nodes, edges)
-            nodes <<- data$nodes
-            edges <<-data$edges
+            data <- deleteNode(graph, c, myNodes, myEdges)
+            myNodes <<- data$nodes
+            myEdges <<-data$edges
           }
         }
 
@@ -113,7 +121,7 @@ shinyServer(function(input, output, session) {
       }
   })
   
-    updateMetaGraphData <- eventReactive(input$metaLoadButton, {
+  updateMetaGraphData <- eventReactive(input$metaLoadButton, {
     
       selectedE <- input$selectEdgeTypes
       selectedNewRelation <- input$newRelation
@@ -160,17 +168,30 @@ shinyServer(function(input, output, session) {
             selId <- input$network_graphChange$id
             selLabel <- input$network_graphChange$label
             aCmd <- input$network_graphChange
-            
-            if ((metaNodes$group[metaNodes$id == input$metaNet_selected]) == metaElements$label)
+           
+            if ((metaNodes$group[metaNodes$id == input$metaNet_selected]) == constMetaLabel)
             {
-              
+             
               aCmd$type <- metaNodes$label[metaNodes$id == input$metaNet_selected]
               aCmd$map <- findMappedProperty(metaNodes, metaEdges, aCmd$type, vizAspects$label)
+              aGroup <- metaNodes$group[metaNodes$id == input$metaNet_selected]
+             
+              # repeat n times
+              for (i  in 1:input$repeatCount)
+              {
+                # adjust command data if more than one note
+                if (i > 1)
+                {
+                  aCmd$label <- paste(selLabel,i)
+                  aCmd$id <- UUIDgenerate()
+                }
+                 
+                newNode <- data.frame(id = aCmd$id, label = aCmd$label , title = "", group = aCmd$type, value = 1, orgValue = 1)
+                myNodes <<- rbind(myNodes,newNode)
+                aCmd$cmd <- "addNode"
+                commandList <<-  appendCommand (commandList, aCmd)   
+              }
               
-              newNode <- data.frame(id = selId, label = selLabel, group = aCmd$type, value = 1, orgValue = 1)
-              nodes <<- rbind(nodes,newNode)
-              aCmd$cmd <- "addNode"
-              commandList <<-  appendCommand (commandList, aCmd)   
               lcc$msg <- "Save graph to reflect changes !"
               lcc$invalidate <- lcc$invalidate + 1
             }
@@ -178,6 +199,7 @@ shinyServer(function(input, output, session) {
           error = function(e) {
             lcc$msg <- "Denied: Ensure that a meta node of type 'Labels' is selected"
             lcc$invalidate <- lcc$invalidate + 1
+            print (e)
             
           })
         }
@@ -190,9 +212,9 @@ shinyServer(function(input, output, session) {
         # print("changed node")
         aCmd$map <- ""
         aCmd$type <- ""
-        nodes$label[nodes$id==selId] <<- selLabel
+        myNodes$label[myNodes$id==selId] <<- selLabel
         commandList <<-  appendCommand (commandList, aCmd)
-        lcc$invalidate <- lcc$invalidate + 1
+        #lcc$invalidate <- lcc$invalidate + 1
         lcc$msg <- "Save graph to reflect changes !"
       }
 
@@ -208,7 +230,7 @@ shinyServer(function(input, output, session) {
         aCmd$type <- input$newRelation
 
         newEdge <- data.frame(id = selId, from= selFrom, to=selTo, label=aCmd$type)
-        edges <<- rbind(edges,newEdge)
+        myEdges <<- rbind(myEdges,newEdge)
         # if redraw/reload necessary uncomment this
         # lcc$invalidate <- lcc$invalidate+1
         commandList <<- appendCommand(commandList, aCmd)
@@ -220,11 +242,11 @@ shinyServer(function(input, output, session) {
         # delete edges
         for (e in input$network_graphChange$edges)
         {
-          if (e %in% edges$id)
+          if (e %in% myEdges$id)
           {
             aCmd <- list(cmd="deleteEdge", id=e)
             print (paste("To delete edge:", e))
-            edges <<- edges[!edges$id == e,]
+            myEdges <<- myEdges[!myEdges$id == e,]
             # deletedEdges <<- c(deletedEdges, e)
             commandList <<- appendCommand(commandList, aCmd)
           }
@@ -233,11 +255,11 @@ shinyServer(function(input, output, session) {
         # delete nodes
         for (n in input$network_graphChange$nodes)
         {
-          if (n %in% nodes$id)
+          if (n %in% myNodes$id)
           {
             aCmd <- list(cmd="deleteNode", id=n)
             print (paste("To delete node:", n))
-            nodes <<- nodes[!nodes$id == n,]
+            myNodes <<- myNodes[!myNodes$id == n,]
             #print (paste("deletedNodes is now ", deletedNodes))
             commandList <<- appendCommand(commandList, aCmd)
           }
@@ -315,25 +337,26 @@ shinyServer(function(input, output, session) {
     updateGraphData()
 
     lcc$invalidate #for reactiveness, this invalidate will be incremented every time a redraw is necessary
-   
+
     # apply scale facor from the slider to the value field
     # the value field will not be written back to data base 
-    nodes$value <- lapply(nodes$orgValue, function(x) {if (is.numeric(x) && !is.na(x)) x*input$nodeSize else as.numeric(input$nodeSize)})
+    myNodes$value <- lapply(myNodes$orgValue, function(x) {if (is.numeric(x) && !is.na(x)) x*input$nodeSize else as.numeric(input$nodeSize)})
    
-    visNetwork(nodes, edges) %>%
+    visNetwork(myNodes, myEdges) %>%
       visEdges(arrow="to") %>%
       visPhysics(stabilization = FALSE) %>%
       visInteraction(navigationButtons = TRUE) %>%
       visOptions(manipulation = TRUE,
-                 highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+                  nodesIdSelection = TRUE) %>%
       visLayout(improvedLayout = input$improvedLayout, randomSeed = 120) %>%
-      visLegend(position="left") 
+      visLegend(position="left")
+     
   })
   
   output$metaNet <- renderVisNetwork({
       
       updateMetaGraphData()
-    
+      print ("render")
       #for reactiveness
       lcc$metaInvalidate
       lcc$msg<-"Meta graph changed, reload of graph required"
@@ -342,7 +365,7 @@ shinyServer(function(input, output, session) {
         visPhysics(stabilization = FALSE) %>%
         visInteraction(navigationButtons = TRUE) %>%
         visOptions(manipulation = TRUE,
-                   highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+                   nodesIdSelection = TRUE) %>%
         visLayout(improvedLayout = input$improvedLayout, randomSeed = 20) %>%
         visLegend(position="left") %>%
         visNodes (size=10)%>%

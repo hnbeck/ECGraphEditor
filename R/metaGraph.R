@@ -4,6 +4,15 @@
 #
 # functions for managing meta graph
 #
+# visNetwork and the underlying vis.js render "label" as the one value for nodes and
+# "title" for the popup at a node. "value" can be used for sizing nodes at rendering
+# Neo4j can handle any number of properties, so a mapping must be definded
+# the meta graph visualizes this mapping of neo4j properties to "label", "title" and "value"
+#
+# the meta graph is defined as
+# from node group "vizAspect" to group "property", from "property" to group "label" 
+# (visAspect)-->(property)-->(label)
+#
 # (c) and author: Hans N. Beck
 # version: 0.1
 #
@@ -53,23 +62,22 @@ loadMetaGraph <- function(graph)
   return (list(nDesc = nodeDesc, eDesc =edgeDesc, pDesc = propDesc))
 }
 
-# the meta graph has to be
-# from vizAspect to property, from property to label 
+
 buildMetaGraph <- function (nodeDesc, edgeDesc, propDesc)
 {
-  mEdges <- data.frame(id = "", from = "", to = "")
+  metaEdges <- data.frame(id = "", from = "", to = "")
   
-  # build basic meta nodes
-  mNodes <- data.frame(id = toVector(vizAspects), label = c("Label", "Title",  "Value"), group = metaElements$aspects)
+  # build the basic meta nodes
+  metaNodes <- data.frame(id = toVector(vizAspects), label = c("Label", "Title",  "Value"), group = constMetaAspect)
   # take meta nodes: every existing label becomes a node in meta graph
-  newFrame <- data.frame(id = nodeDesc, label = nodeDesc, group = metaElements$label)
-  mNodes <- rbind(mNodes, newFrame)
-  
+  newFrame <- data.frame(id = nodeDesc, label = nodeDesc, group = constMetaLabel)
+  metaNodes <- rbind(metaNodes, newFrame)
+ 
   # every existing property becomes a node in meta graph
-  if (length(unlist(propDesc$key))>0)
+  if (!is.na(propDesc["key"]) && length(unlist(propDesc$key))>0)
   {
-    newFrame <- data.frame(id = unique(propDesc$key), label = unique(propDesc$key), group = metaElements$props)
-    mNodes <- rbind(mNodes, newFrame)
+    newFrame <- data.frame(id = unique(propDesc$key), label = unique(propDesc$key), group = constMetaProperty)
+    metaNodes <- rbind(metaNodes, newFrame)
     idCount= 1;
     # now build edges: which properties exist in what node (selected by their label)
     for (k in unique(propDesc$key))
@@ -79,27 +87,27 @@ buildMetaGraph <- function (nodeDesc, edgeDesc, propDesc)
       a = idCount
       b = idCount + length(toID) -1
       newRow <- data.frame(id = c(a:b), from = fromID, to=toID)
-      mEdges <- rbind(mEdges, newRow)
+      metaEdges <- rbind(metaEdges, newRow)
       idCount = idCount + length(toID)
     }
   }
   
-  #print(mNodes)
+  # print(metaNodes)
   
-  return (list("metaNodes" = mNodes, "metaEdges" = mEdges))
+  return (list("metaNodes" = metaNodes, "metaEdges" = metaEdges))
 }
 
 #vizAspect: see server.R for possible values
-findMappedProperty <- function (mNodes, mEdges, targetLabel, vizAspect)
+findMappedProperty <- function (metaNodes, metaEdges, targetNeo4jLabel, vizAspect)
 {
   # thats because is.na() doesn't work for me, don't know why
   aProperty <- "NA"
   
-  # all properties of node with label targetLabel
-  for (p in mEdges$from[mEdges$to==targetLabel])
+  # for all properties linked to meta node "label"
+  for (p in metaEdges$from[metaEdges$to==targetNeo4jLabel])
   { 
-    # for propety to be mapped on label
-    if (vizAspect  %in% mEdges$from[mEdges$to == p])
+    # find property which is linked to meta node "vizAspect" => thats the propertie to be shown in graph
+    if (vizAspect  %in% metaEdges$from[metaEdges$to == p])
     { 
       aProperty <-  p
       break;

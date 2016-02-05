@@ -3,6 +3,7 @@
 # graphIO.R
 #
 # IO component for loading graphs from Neo4j via RNeo4j, modify and store back
+# please read comment of metaGraph.R to understand graphs and meta graphs
 #
 # (c) and author: Hans N. Beck
 # version: 0.1
@@ -10,27 +11,30 @@
 ###########################################################################################
 
 # note: at this level, we talk about node labels and node properties
-# this are terms on neo4j level
-library(igraph)
+# which are the terms on neo4j level
+
+require(igraph)
 
 # connection to neo4j database
 graph = startGraph("http://localhost:7474/db/data")
 
-loadGraph <- function (graph, mNodes, mEdges,edgeTypesFilter, filterID = NULL)
+loadGraph <- function (graph, metaNodes, metaEdges, edgesFilter, idToFilter = NULL, showUnconnected = TRUE)
 {
   # inits
   nodes <- NULL
-  propertyList <- list()
+  neo4jPropertyList <- list()
   
   print("Load graph")
  
-  # for all required node labels
-  for (nl in mNodes$label[mNodes$group == metaElements$label])
+  setOfNeo4jLabels <- metaNodes$label[metaNodes$group == constMetaLabel]
+  
+  for (nl in setOfNeo4jLabels)
   {
+      "determine mapping for all neo4j node properties"
       for (vA in vizAspects)
-        propertyList[vA] <- findMappedProperty(mNodes, mEdges, nl, vA)
+        neo4jPropertyList[vA] <- findMappedProperty(metaNodes, metaEdges, nl, vA)
     
-      queryDataNodes <- buildNodeQuery(c(nl), propertyList, filterID)
+      queryDataNodes <- buildNodeQuery(c(nl), neo4jPropertyList, idToFilter)
       nodesSet <- cypher(graph, queryDataNodes$nQuery)
       
       if (!is.null(nodesSet))
@@ -41,7 +45,6 @@ loadGraph <- function (graph, mNodes, mEdges,edgeTypesFilter, filterID = NULL)
           nodes <- nodesSet
       }
   }
-
   
   # if no value column generate one with default 1, important for node size scaling
   if (! "value" %in% names(nodes))
@@ -49,18 +52,21 @@ loadGraph <- function (graph, mNodes, mEdges,edgeTypesFilter, filterID = NULL)
   
   # copy the column value
   nodes$orgValue = as.numeric(nodes$value)
-  
-  queryDataEdges <-buildEdgeQuery(edgeTypesFilter, mNodes$label)
+  # take only the "label" meta nodes (and not properties or value)
+  queryDataEdges <-buildEdgeQuery(edgesFilter, setOfNeo4jLabels)
   edges <- cypher(graph, queryDataEdges$eQuery)
 
   #print(nodes)
 
-  # uncomment this for removing nodes without edges
-  # nodeKeys = data.frame(id=unique(c(edges$from, edges$to)))
-  # nodes <- nodes[nodes$id %in% nodeKeys$id,]
   # remove edges without nodes
   edges <- edges[edges$from %in% nodes$id,]
   edges <- edges[edges$to %in% nodes$id,]
+  
+  if (!showUnconnected)
+  {
+    nodeKeys = data.frame(id=unique(c(edges$from, edges$to)))
+    nodes <- nodes[nodes$id %in% nodeKeys$id,]
+  }
  
   return (list( n = nodes, e = edges, numNodes = nrow(nodes), numEdges = nrow(edges)))
 }
@@ -106,7 +112,7 @@ addNode <- function(graph, aCommand, nodes, edges, lcc)
 }
 
 # updates node data in database
-updateNode <- function(graph, aCommand, nodes, edges, mNodes, mEdges)
+updateNode <- function(graph, aCommand, nodes, edges, metaNodes, metaEdges)
 {
   print("update node in db")
   aNodeID <- aCommand$id
@@ -118,7 +124,7 @@ updateNode <- function(graph, aCommand, nodes, edges, mNodes, mEdges)
   result <- cypher(graph, aQuery)
   targetLabel = result$labels[1] # assumption: only one label per node
   # only vizLabel can be changed by user in GUI
-  aProperty <- findMappedProperty(mNodes, mEdges, targetLabel, vizAspects$label)
+  aProperty <- findMappedProperty(metaNodes, metaEdges, targetLabel, vizAspects$label)
   if (!aProperty=="NA")
   {
     query = paste0("match (n) where id(n)=", aNodeID, " set n.",aProperty, "='", aNodeContent, "'")

@@ -8,9 +8,9 @@
 # version: 0.1
 #
 ###########################################################################################
-library(igraph)
-library(visNetwork)
-library(RNeo4j)
+require(igraph)
+require(visNetwork)
+require(RNeo4j)
 
 # note: at this level, we talk about node labels and node properties
 # this are terms on neo4j level
@@ -34,7 +34,7 @@ appendList<-function(aList, element)
 appendCommand <- function(aCommandList, aVisCmd)
 {
 
-  print(aVisCmd)
+  # print(aVisCmd)
   if (aVisCmd$cmd =="addNode")
   {
     aNewFrame <- data.frame(cmd=aVisCmd$cmd,
