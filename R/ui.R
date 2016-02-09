@@ -23,6 +23,8 @@ dashboardPage(
                             choices = NULL, multiple = TRUE),
     selectizeInput("newRelation", "Relationship for new edges",
              choices = list("newRelation", selected = "newRelation"),multiple = FALSE, options = list(create = TRUE)),
+    selectizeInput("metaGraphList", "Select meta graph or add name to store",
+                   choices = NULL, multiple = FALSE, options = list(create = TRUE)),
     checkboxInput("improvedLayout", "Use improved layout", value=FALSE),
     checkboxInput("lonlyNodes", "Show unconnected nodes", value=TRUE),
     sliderInput("nodeSize", "Node scale factor:", min=2, max = 15, value = 10, step = 1),

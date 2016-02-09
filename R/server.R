@@ -13,6 +13,7 @@
 require(visNetwork)
 require (stringr)
 require(uuid)
+require(jsonlite)
 source("basis.R")
 source("graphIO.R")
 source ("metaGRaph.R")
@@ -36,6 +37,8 @@ constMetaAspect <<- "Aspects"
 # this type is called "label" at neo4j level
 # a neo4j node of a selected label as properties
 propDesc <<- c(key=NA) # property description
+listOfMetaNodes <<-list()
+listOfMetaEdges <<-list()
 
 
 shinyServer(function(input, output, session) {
@@ -140,6 +143,32 @@ shinyServer(function(input, output, session) {
       updateSelectizeInput(session, "newRelation", choices = edgeDesc, selected = selectedNewRelation)
       
       lcc$metaInvalidate <- 0
+  })
+  
+  observeEvent(input$metaGraphList,{
+    # store metagraph is list
+    if (!is.null(input$metaGraphList) && (input$metaGraphList != ""))
+    {
+      print (names(listOfMetaNodes))
+      if (input$metaGraphList %in% names(listOfMetaNodes))
+      {
+        print ("restore")
+        print (listOfMetaNodes[input$metaGraphList])
+        #known entry: restore
+        metaNodes <<- fromJSON(listOfMetaNodes[[input$metaGraphList]])
+        metaEdges <<- fromJSON(listOfMetaEdges[[input$metaGraphList]])
+        lcc$metaInvalidate <- lcc$metaInvalidate + 1
+      }
+      else
+      {
+        # new entry: save
+        listOfMetaNodes[input$metaGraphList] <<- toJSON(metaNodes)
+        listOfMetaEdges[input$metaGraphList] <<- toJSON(metaEdges)
+      }
+      
+    }
+    
+    print (input$metaGraphList)
   })
   
   # node type filter
@@ -356,7 +385,7 @@ shinyServer(function(input, output, session) {
   output$metaNet <- renderVisNetwork({
       
       updateMetaGraphData()
-      print ("render")
+    
       #for reactiveness
       lcc$metaInvalidate
       lcc$msg<-"Meta graph changed, reload of graph required"
