@@ -220,7 +220,8 @@ shinyServer(function(input, output, session) {
                 aCmd$cmd <- "addNode"
                 commandList <<-  appendCommand (commandList, aCmd)   
               }
-              
+              #g <- visNetworkProxy("network")
+              #visSetData(g, myNodes, myEdges)
               lcc$msg <- "Save graph to reflect changes !"
               lcc$invalidate <- lcc$invalidate + 1
             }
@@ -372,6 +373,7 @@ shinyServer(function(input, output, session) {
     myNodes$value <- lapply(myNodes$orgValue, function(x) {if (is.numeric(x) && !is.na(x)) x*input$nodeSize else as.numeric(input$nodeSize)})
    
     visNetwork(myNodes, myEdges) %>%
+      visIgraphLayout(layout="layout_as_tree")%>%
       visEdges(arrow="to") %>%
       visPhysics(stabilization = FALSE) %>%
       visInteraction(navigationButtons = TRUE) %>%
@@ -390,6 +392,7 @@ shinyServer(function(input, output, session) {
       lcc$metaInvalidate
       lcc$msg<-"Meta graph changed, reload of graph required"
       visNetwork(metaNodes, metaEdges) %>%
+       
         visEdges(arrow="to") %>%
         visPhysics(stabilization = FALSE) %>%
         visInteraction(navigationButtons = TRUE) %>%

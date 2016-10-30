@@ -57,10 +57,12 @@ loadGraph <- function (graph, metaNodes, metaEdges, edgesFilter, idToFilter = NU
   edges <- cypher(graph, queryDataEdges$eQuery)
 
   #print(nodes)
-
+  print(edges)
   # remove edges without nodes
   edges <- edges[edges$from %in% nodes$id,]
   edges <- edges[edges$to %in% nodes$id,]
+  # experimentell
+   edges  <- edges[,!colnames(edges) == "id"]
   
   if (!showUnconnected)
   {
