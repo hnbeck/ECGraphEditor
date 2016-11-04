@@ -1,30 +1,56 @@
 
-% Muster einer Karte
-card([_/NE, _/_]) :- number(NE).
 
 % database
 % lib der Karten
-cardlib(race, ["F"/12,"V"/22]).
-cardlib(doedel, ["F"/13,"V"/1]).
-cardlib(old, ["F"/2,"V"/0]).
-cardlib(me, ["E"/1, "X"/2]).
+cardlib(race, ["T"/car,"V"/2, "E"/1]).
+cardlib(doedel, ["T"/car,"V"/1, "E"/1]).
+cardlib(old, ["T"/car,"V"/0, "E"/1]).
+cardlib(me, ["T"/me, "V"/2, "E"/2]).
+cardlib(straight, ["T"/track, "V"/3]).
+cardlib(right, ["T"/track, "V"/1]).
 
-% Knotenstruktur
-node(N, Before, Left).
+
+% mehrere Karten können aufeinander liegen
+% Kartenstack
+% Struktur eines Karten
+place(CardStack, Before, Left).
+
+% Spieloperatioen
+% Spiele Karte links
+playLeft(place(CS, B, L), NewCard, place(CS, B, L2)) :-
+  playOn(L, NewCard, L2).
+
+% Spiele Karte rechts
+playBefore(place(CS, B, L), NewCard, place(CS, B2, L)) :-
+  playOn(B, NewCard, B2).
+
+playOn(Place, NewCard,  place([NewCard], _, _)) :-
+    var(Place).
+
+playOn(place(Stack, B, L), NewCard, place(Stack2, B, L)) :-
+  append(NewCard, Stack, Stack2).
+
+accessPlace(Card, place(Card, B, L), place(Card, B, L)).
+
+accessPlace(Card, Place, Place) :-
+  var(Place).
+
+accessPlace(Card, place(C, B, L), Place) :-
+  accessPlace(C, L, Place),
+  accessPlace(C, B, Place).
+
+accessPlace(Card, place(C, B, L), Place) :-
+    accessPlace(C, B, Place).
+
 
 % Baue ein Kartenfeld auf
-init(Playfield) :-
-  Playfield = node(me, _, _),
-  playLeft(Playfield, old, _),
-  playBefore(Playfield, doedel, Node),
-  playLeft(Node, old, _),
-  playBefore(Node, race, _).
+initGame(Player1, Player2) :-
+  playLeft( place([me], _, _), old, P1_2),
+  playBefore(P1_2, doedel, Player1),
+  accessPlace(doedel, Player1, Place),
+  playLeft(B, old, _).
 
-playLeft(node(N, _, L), Card, L) :-
-  L = node(Card, _ , _).
 
-playBefore(node(N, B, _), Card, B) :-
-  B = node(Card, _, _).
 
 %%%%%%%%%%% Ausgabe %%%%%%%%%%%%%
 % schreibe alle Eigenschaften in gegebene Zeilten
@@ -41,45 +67,45 @@ cardToString([H|T], [CH|CT], A, FB ) :-
   append(A, [R], A2),
   cardToString(T, CT, A2, FB).
 
-% fails if BeforeNode doesnt exis
-% if beforeNode doesnt exist
+% fails if BeforePlace doesnt exis
+% if beforePlace doesnt exist
 
 % wenn es vertikal (before) keinen neuen Knoten gibt
-writeCard([[]|T], Node, _, T) :-
-    var(Node).
+writeCard([[]|T], Place, _, T) :-
+    var(Place).
 %    cardToString([], ["-"/"-", "-"/"-"], [], LB),
 %    FB = [LB |T].
 
-writeCard([LB|T], Node, Col, FB) :-
-    var(Node),
+writeCard([LB|T], Place, Col, FB) :-
+    var(Place),
     Col == 1,
-    cardToString(LB, ["-"/"-", "-"/"-"], [], LB2),
+    cardToString(LB, ["-"/"-", "-"/"-", "-"/"-"], [], LB2),
     FB = [LB2 |T].
 
-writeCard([LB|T], Node, Col, FB) :-
-    var(Node),
+writeCard([LB|T], Place, Col, FB) :-
+    var(Place),
     Col > 1,
     FB = [LB|T].
 
 % schreibe die Karte aus, Ergbenis ist eine List von Strings
 % LB ist LineBlock: Zeilen, die die Karte repräsentieren
-writeCard([LB|T], node(N, B, L) , Col, FB3) :-
-  cardlib(N, Data),
+writeCard([LB|T], place([C|CS], B, L), Col, FB3) :-
+  cardlib(C, Data),
   cardToString(LB, Data, [], LB2),
   Col2 is Col +1,
   writeCard([LB2|T], L, Col2, [H2|T2]),
   writeCard([ [], H2|T2], B, 0, FB3).
 
 % Rootnode ist normalerweise das "me"
-writeField(FB, RootNode, FB2) :-
-  writeCard(FB, RootNode, 0, FB2),
+writeField(FB, RootPlace, FB2) :-
+  writeCard(FB, RootPlace, 0, FB2),
   flatten(FB2, FB3),
   writeFB(FB3).
 
 % setze Datenblock einer Karte in Zeile um
-linePart(T/V, L ) :- atomic_list_concat([T, ":", V, " "], L).
+linePart(T/V, L ) :- atomic_list_concat([T, ":", V, "\t\t"], L).
 
-Schreibe das gesamte Kartenfeld
+% Schreibe das gesamte Kartenfeld
 writeFB([]) :- nl.
 writeFB([H|T]) :-
     write(H), nl,
