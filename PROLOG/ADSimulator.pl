@@ -65,6 +65,11 @@ applyAction(action(To, move), Mile,  place([Card|CS], Mile, _, L), place(NCards,
 % action(Card, move)
 % action(_, drop)
 
+heading(before, 10).
+heading(after, -10).
+heading(left, 1).
+heading(right, -1).
+
 %%% Kommandoausführung
 %% so kommt es aus der Kommandozeile
 playOn((Coord, Name, flip), P1, P2) :-
@@ -80,6 +85,10 @@ playOn((Coord, Name, Cmd), P1, P2) :-
 playOn((Coord, Cmd), P1, P2) :-
     applyOn(Coord, action(_, Cmd), P1, P2, _).
 
+newPlace(Mile, Heading, NewCards, NewPlace) :-
+  heading( Heading, D),
+  NM is Mile + D,
+  NewPlace = place(NewCards, NM, _, _).
 
 %%%%%% Suche den Kartenplatz, für den die Aktion gilt
 % Ende einer Suchrichtung
@@ -87,15 +96,12 @@ applyOn(_, action(_, _),  Place, Place,_ ) :-
   var(Place).
 
 applyOn(Mile, action(Cmd, before), place(Cards, Mile, _, L), place(Cards, Mile, NB, L), R) :-
-  NM is Mile + 10,
   applyAction(action(Cmd, on), Mile, [],  NewCards, R),
-  NB = place(NewCards, NM, _, _).
+  newPlace(Mile, before, NewCards, NB).
 
 applyOn(Mile, action(Cmd, left), place(Cards, Mile, B, _), place(Cards, Mile, B, NL), R) :-
-  NM is Mile + 1,
   applyAction(action(Cmd, on), Mile, [],  NewCards, R),
-  NL = place(NewCards, NM, _, _).
-
+  newPlace(Mile, left, NewCards, NL).
 
 % place gefunden
 applyOn(Mile, Action, place(Cards, Mile, B, L), place(NewCards, Mile, B, L), R) :-
@@ -269,7 +275,7 @@ writeField(RootPlace) :-
   reverse(RL, RL2),
   formatRows([], FB2, RL2, FB3 ),
   flatten(FB3, FB4),
-  writeFB(FB4).
+  writeFB(FB4). 
 
 formatRows(RowBlock, [], _, RowBlock).
 %  format is [[ [Lines  Place1], [Lines Place 0]]]
@@ -294,13 +300,9 @@ appendLines([L|Lines], [C|Cols], RL, [S|Lines2]) :-
   format(atom(S), F, [L, C]),
   appendLines(Lines, Cols, RL, Lines2).
 
-
 % Schreibe das gesamte Kartenfeld
 % FB steht für FrameBuffer
 writeFB([]) :- nl.
 writeFB([H|T]) :-
     write(H), nl,
     writeFB(T).
-
-
-% Spielfeld
