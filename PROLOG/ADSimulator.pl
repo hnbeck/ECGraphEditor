@@ -18,9 +18,15 @@ replace([Org|T], Org, New, [New|T]).
 replace([H|T], Org, New, [H|T2]) :-
       replace(T, Org, New, T2).
 
+replaceIndex([_|T], 0, X, [X|T]).
+replaceIndex([H|T], I, X, [H|R]) :-
+    I > 0,
+    NI is I-1,
+    replaceIndex(T, NI, X, R), !.
+replaceIndex(L, _,_,L).
 
 % definiert maximale Dimension des Kartenfeldes
-cardFieldDim(3,4).
+cardFieldDim(2,4).
 % mehrere Karten können aufeinander liegen
 % Kartenstack
 % Struktur eines Karten
@@ -236,6 +242,18 @@ writeStack(LB, [[]|_], M, _, LB3, W) :-
 % = schreibbewegung nach oben (Before)
 writePlace([RL, []|T], Place, _, [RL|T]) :-
     var(Place).
+
+sortPlace(GB, Place, GB) :-
+    var(Place).
+
+sortPlace(GB, place(Cards, M, B, L), GB4) :-
+  C is M mod 10,
+  R is M div 10,
+  nth0(R, GB, El),
+  replaceIndex(El, C, Cards, El2),
+  replaceIndex(GB, R, El2, GB2),
+  sortPlace(GB2, L,  GB3),
+  sortPlace(GB3, B, GB4).
 % Es gibt einen Zeilenblock und Platz ist undefiniert
 % Schreibbewegung ist links
 writePlace([RL, LB|T], Place, Col, FB2) :-
@@ -249,6 +267,9 @@ writePlace([RL, LB|T], Place, Col, FB2) :-
 % Linksbewegung aushalb der Feldgrenzen (Col >= CMAX)
 writePlace(FB, Place, _, FB) :-
     var(Place).
+
+
+
 % schreibe die Karte aus, Ergbenis ist eine List von Strings
 % LB ist LineBlock: Zeilen, die die Karte repräsentieren
 writePlace([RL, LB|T], place(Cards, M, B, L), Col, FB2) :-
@@ -258,6 +279,23 @@ writePlace([RL, LB|T], place(Cards, M, B, L), Col, FB2) :-
   Col2 is Col +1,
   writePlace([RL3, LB2|T], L, Col2, [RL4 | FBs]),
   writePlace([ RL4, [] | FBs], B, 0, FB2).
+
+
+writePlace2(FB, [0|_], _, FB).
+writePlace2(FB, [], _, FB).
+
+writePlace2([RL, LB|T], [Card|Cards], Col, FB) :-
+  writeStack([], Card, 1, 0, Block, Size),
+  append([Block], LB, LB2),
+  updateRulers(RL, Col, Size, RL3),
+  Col2 is Col +1,
+  writePlace2([RL3, LB2|T], Cards, Col2, FB).
+
+writePlace2Row(FB, [],  FB).
+
+writePlace2Row(FB, [Row|Rows], FB3) :-
+  writePlace2(FB, Row, 0, [H|T]),
+  writePlace2Row([ H, [] | FB2], Rows,  FB3).
 
 updateRulers(RulerList, Col, Size, RulerList) :-
   nth0(Col, RulerList, OldSize),
@@ -271,11 +309,14 @@ updateRulers(RulerList, Col, Size, NewRulerList) :-
 % Schreibe das ganze Kartenfeld
 % Übergebe jetzt auch Rulerlist
 writeField(RootPlace) :-
-  writePlace([[1,1,1], []], RootPlace, 0,  [RL|FB2]),
-  reverse(RL, RL2),
+  %writePlace([[1,1], []], RootPlace, 0,  [RL|FB2]),
+  sortPlace([[0,0], [0,0], [0,0],[0,0]], RootPlace, GB),
+  %reverse(RL, RL2),
+  %reverse(GB, GB2),
+  writePlace2Row([[1,1], []], GB, [RL2 | FB2]),
   formatRows([], FB2, RL2, FB3 ),
   flatten(FB3, FB4),
-  writeFB(FB4). 
+  writeFB(FB4).
 
 formatRows(RowBlock, [], _, RowBlock).
 %  format is [[ [Lines  Place1], [Lines Place 0]]]
