@@ -126,8 +126,8 @@ initGame(Player1, _) :-
   applyOn(0, action(card(old,up), left), P1, P2,_),
   applyOn(0, action(card(doedel,up), before), P2, P3,_),
   applyOn(0, action(card(right,up), on), P3, P4,_),
-  applyOn(10, action(card(race,up), left), P4, P5,_),
-  applyOn(10, action(card(bottom,up), flip), P5, Player1,_).
+  %applyOn(10, action(card(race,up), left), P4, P5,_),
+  applyOn(10, action(card(bottom,up), flip), P4, Player1,_).
 
 
   %%%%%%%%%%%%%% Game Play %%%%%%%%%%%%%%%%%%
@@ -240,8 +240,8 @@ writeStack(LB, [[]|_], M, _, LB3, W) :-
 
 % Zeilenblock ist leer und Platz ist undefiniert
 % = schreibbewegung nach oben (Before)
-writePlace([RL, []|T], Place, _, [RL|T]) :-
-    var(Place).
+% writePlace([RL, []|T], Place, _, [RL|T]) :-
+%     var(Place).
 
 sortPlace(GB, Place, GB) :-
     var(Place).
@@ -250,52 +250,57 @@ sortPlace(GB, place(Cards, M, B, L), GB4) :-
   C is M mod 10,
   R is M div 10,
   nth0(R, GB, El),
-  replaceIndex(El, C, Cards, El2),
+  replaceIndex(El, C, place(Cards, M, B, L), El2),
   replaceIndex(GB, R, El2, GB2),
   sortPlace(GB2, L,  GB3),
   sortPlace(GB3, B, GB4).
 % Es gibt einen Zeilenblock und Platz ist undefiniert
 % Schreibbewegung ist links
-writePlace([RL, LB|T], Place, Col, FB2) :-
-    var(Place),
-    cardFieldDim(CMAX, _),
-    Col < CMAX,
-    writeStack([], [[]], -1, 1, Block, Size), % Deute Platz an
-    append([Block], LB, LB2),
-    Col2 is Col +1,
-    writePlace([RL, LB2 |T], Place, Col2, FB2).
-% Linksbewegung aushalb der Feldgrenzen (Col >= CMAX)
-writePlace(FB, Place, _, FB) :-
-    var(Place).
+% writePlace([RL, LB|T], Place, Col, FB2) :-
+%     var(Place),
+%     cardFieldDim(CMAX, _),
+%     Col < CMAX,
+%     writeStack([], [[]], -1, 1, Block, Size), % Deute Platz an
+%     append([Block], LB, LB2),
+%     Col2 is Col +1,
+%     writePlace([RL, LB2 |T], Place, Col2, FB2).
+% % Linksbewegung aushalb der Feldgrenzen (Col >= CMAX)
+% writePlace(FB, Place, _, FB) :-
+%     var(Place).
 
 
 
 % schreibe die Karte aus, Ergbenis ist eine List von Strings
 % LB ist LineBlock: Zeilen, die die Karte repräsentieren
-writePlace([RL, LB|T], place(Cards, M, B, L), Col, FB2) :-
+% writePlace([RL, LB|T], place(Cards, M, B, L), Col, FB2) :-
+%   writeStack([], Cards, M, 0, Block, Size),
+%   append([Block], LB, LB2),
+%   updateRulers(RL, Col, Size, RL3),
+%   Col2 is Col +1,
+%   writePlace([RL3, LB2|T], L, Col2, [RL4 | FBs]),
+%   writePlace([ RL4, [] | FBs], B, 0, FB2).
+
+writePlace2(FB, [], _, FB).
+writePlace2(FB, [0| _], _, FB).
+
+writePlace2([RL, LB|T], [0| _], _, [RL3, LB2|T]) :-
+  writeStack([], [], -1, 0, Block, Size),
+  append([Block], LB, LB2),
+  updateRulers(RL, Col, Size, RL3).
+
+
+writePlace2([RL, LB|T], [place(Cards, M, B, L)|Places], Col, FB) :-
   writeStack([], Cards, M, 0, Block, Size),
   append([Block], LB, LB2),
   updateRulers(RL, Col, Size, RL3),
   Col2 is Col +1,
-  writePlace([RL3, LB2|T], L, Col2, [RL4 | FBs]),
-  writePlace([ RL4, [] | FBs], B, 0, FB2).
+  writePlace2([RL3, LB2|T], Places, Col2, FB).
 
+writeRow(FB, [],  FB).
 
-writePlace2(FB, [0|_], _, FB).
-writePlace2(FB, [], _, FB).
-
-writePlace2([RL, LB|T], [Card|Cards], Col, FB) :-
-  writeStack([], Card, 1, 0, Block, Size),
-  append([Block], LB, LB2),
-  updateRulers(RL, Col, Size, RL3),
-  Col2 is Col +1,
-  writePlace2([RL3, LB2|T], Cards, Col2, FB).
-
-writePlace2Row(FB, [],  FB).
-
-writePlace2Row(FB, [Row|Rows], FB3) :-
+writeRow(FB, [Row|Rows], FB3) :-
   writePlace2(FB, Row, 0, [H|T]),
-  writePlace2Row([ H, [] | FB2], Rows,  FB3).
+  writeRow([ H, [] | T], Rows,  FB3).
 
 updateRulers(RulerList, Col, Size, RulerList) :-
   nth0(Col, RulerList, OldSize),
@@ -313,7 +318,7 @@ writeField(RootPlace) :-
   sortPlace([[0,0], [0,0], [0,0],[0,0]], RootPlace, GB),
   %reverse(RL, RL2),
   %reverse(GB, GB2),
-  writePlace2Row([[1,1], []], GB, [RL2 | FB2]),
+  writeRow([[1,1], []], GB, [RL2 | FB2]),
   formatRows([], FB2, RL2, FB3 ),
   flatten(FB3, FB4),
   writeFB(FB4).
@@ -347,3 +352,5 @@ writeFB([]) :- nl.
 writeFB([H|T]) :-
     write(H), nl,
     writeFB(T).
+
+  % NEZg
